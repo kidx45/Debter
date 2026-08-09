@@ -16,6 +16,6 @@ This software allows users to securely authenticate and manage their personal fi
 #### Categorize
 - The software shall allow expenses to be assigned to a category and provide the categories such as groceries, transportation, entertainment, and utilities. It shall allow users to retrieve their available categories.
 #### Dashboard
-- The software shall provide a clean, interactive and user-friendly interface that allows the user to view and analyze their expenditure
+- The software shall enable users to view their current balance, total income, and total expenses, as well as display their recent transactions. Additionally, it shall allow users to view spending grouped by category and identify the categories with the highest expenditure.
 #### Filtering  
 - The software shall allow users to filter expenses by date range, by category and combine multiple filters.
