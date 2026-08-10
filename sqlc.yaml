@@ -1,0 +1,12 @@
+version: "1"
+packages:
+  - name: "db"  
+    path: "./internal/repository/db"
+    queries: "./internal/repository/query"
+    schema: "./internal/repository/migration"
+    engine: "postgresql"
+    emit_prepared_queries: true
+    emit_interface: true
+    emit_exact_table_names: false
+    emit_json_tags: true
+    json_tags_case_style: "camel"
