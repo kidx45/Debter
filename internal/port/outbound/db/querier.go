@@ -9,6 +9,7 @@ import (
 )
 
 type Querier interface {
+	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	FilterEntriesByDate(ctx context.Context, arg FilterEntriesByDateParams) ([]Entry, error)
 	GetAccountsByUserId(ctx context.Context, userID int64) ([]Account, error)
 	GetEntriesByAccountId(ctx context.Context, accountID int64) ([]Entry, error)

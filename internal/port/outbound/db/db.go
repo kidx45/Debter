@@ -24,6 +24,9 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.createUserStmt, err = db.PrepareContext(ctx, createUser); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateUser: %w", err)
+	}
 	if q.filterEntriesByDateStmt, err = db.PrepareContext(ctx, filterEntriesByDate); err != nil {
 		return nil, fmt.Errorf("error preparing query FilterEntriesByDate: %w", err)
 	}
@@ -44,6 +47,11 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
+	if q.createUserStmt != nil {
+		if cerr := q.createUserStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createUserStmt: %w", cerr)
+		}
+	}
 	if q.filterEntriesByDateStmt != nil {
 		if cerr := q.filterEntriesByDateStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing filterEntriesByDateStmt: %w", cerr)
@@ -108,6 +116,7 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 type Queries struct {
 	db                              DBTX
 	tx                              *sql.Tx
+	createUserStmt                  *sql.Stmt
 	filterEntriesByDateStmt         *sql.Stmt
 	getAccountsByUserIdStmt         *sql.Stmt
 	getEntriesByAccountIdStmt       *sql.Stmt
@@ -119,6 +128,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
 		db:                              tx,
 		tx:                              tx,
+		createUserStmt:                  q.createUserStmt,
 		filterEntriesByDateStmt:         q.filterEntriesByDateStmt,
 		getAccountsByUserIdStmt:         q.getAccountsByUserIdStmt,
 		getEntriesByAccountIdStmt:       q.getEntriesByAccountIdStmt,
