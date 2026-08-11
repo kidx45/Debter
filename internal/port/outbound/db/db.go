@@ -27,6 +27,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createUserStmt, err = db.PrepareContext(ctx, createUser); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateUser: %w", err)
 	}
+	if q.deleteUserByUsernameStmt, err = db.PrepareContext(ctx, deleteUserByUsername); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteUserByUsername: %w", err)
+	}
 	if q.filterEntriesByDateStmt, err = db.PrepareContext(ctx, filterEntriesByDate); err != nil {
 		return nil, fmt.Errorf("error preparing query FilterEntriesByDate: %w", err)
 	}
@@ -42,6 +45,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getUserByUsernameStmt, err = db.PrepareContext(ctx, getUserByUsername); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserByUsername: %w", err)
 	}
+	if q.updateUserNameByUsernameStmt, err = db.PrepareContext(ctx, updateUserNameByUsername); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateUserNameByUsername: %w", err)
+	}
 	return &q, nil
 }
 
@@ -50,6 +56,11 @@ func (q *Queries) Close() error {
 	if q.createUserStmt != nil {
 		if cerr := q.createUserStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createUserStmt: %w", cerr)
+		}
+	}
+	if q.deleteUserByUsernameStmt != nil {
+		if cerr := q.deleteUserByUsernameStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteUserByUsernameStmt: %w", cerr)
 		}
 	}
 	if q.filterEntriesByDateStmt != nil {
@@ -75,6 +86,11 @@ func (q *Queries) Close() error {
 	if q.getUserByUsernameStmt != nil {
 		if cerr := q.getUserByUsernameStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getUserByUsernameStmt: %w", cerr)
+		}
+	}
+	if q.updateUserNameByUsernameStmt != nil {
+		if cerr := q.updateUserNameByUsernameStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateUserNameByUsernameStmt: %w", cerr)
 		}
 	}
 	return err
@@ -117,11 +133,13 @@ type Queries struct {
 	db                              DBTX
 	tx                              *sql.Tx
 	createUserStmt                  *sql.Stmt
+	deleteUserByUsernameStmt        *sql.Stmt
 	filterEntriesByDateStmt         *sql.Stmt
 	getAccountsByUserIdStmt         *sql.Stmt
 	getEntriesByAccountIdStmt       *sql.Stmt
 	getEntriesByCategoryAndTypeStmt *sql.Stmt
 	getUserByUsernameStmt           *sql.Stmt
+	updateUserNameByUsernameStmt    *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -129,10 +147,12 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		db:                              tx,
 		tx:                              tx,
 		createUserStmt:                  q.createUserStmt,
+		deleteUserByUsernameStmt:        q.deleteUserByUsernameStmt,
 		filterEntriesByDateStmt:         q.filterEntriesByDateStmt,
 		getAccountsByUserIdStmt:         q.getAccountsByUserIdStmt,
 		getEntriesByAccountIdStmt:       q.getEntriesByAccountIdStmt,
 		getEntriesByCategoryAndTypeStmt: q.getEntriesByCategoryAndTypeStmt,
 		getUserByUsernameStmt:           q.getUserByUsernameStmt,
+		updateUserNameByUsernameStmt:    q.updateUserNameByUsernameStmt,
 	}
 }

@@ -1,6 +1,8 @@
 package test
 
-import "testing"
+import (
+	"testing"
+)
 
 func CreateRandomUser(t *testing.T) {
 	

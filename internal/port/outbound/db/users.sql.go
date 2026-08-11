@@ -44,6 +44,16 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const deleteUserByUsername = `-- name: DeleteUserByUsername :exec
+DELETE FROM users
+WHERE username = $1
+`
+
+func (q *Queries) DeleteUserByUsername(ctx context.Context, username string) error {
+	_, err := q.exec(ctx, q.deleteUserByUsernameStmt, deleteUserByUsername, username)
+	return err
+}
+
 const getUserByUsername = `-- name: GetUserByUsername :one
 SELECT id, username, hashed_password, full_name, email, created_at FROM users 
 WHERE username = $1
@@ -61,4 +71,19 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const updateUserNameByUsername = `-- name: UpdateUserNameByUsername :exec
+UPDATE users SET full_name = $1
+WHERE username = $2
+`
+
+type UpdateUserNameByUsernameParams struct {
+	FullName string `json:"fullName"`
+	Username string `json:"username"`
+}
+
+func (q *Queries) UpdateUserNameByUsername(ctx context.Context, arg UpdateUserNameByUsernameParams) error {
+	_, err := q.exec(ctx, q.updateUserNameByUsernameStmt, updateUserNameByUsername, arg.FullName, arg.Username)
+	return err
 }
