@@ -3,7 +3,7 @@ package util
 import "math/rand"
 
 func RandomNumber (min,max int64) int64 {
-	return min - rand.Int63n(max-min+1)
+	return min + rand.Int63n(max-min+1)
 }
 
 func RandomString (size int) string {
@@ -11,7 +11,8 @@ func RandomString (size int) string {
 	ranges := []int{17,49}
 	for i := 0; i < size; i++ {
 		num := ranges[rand.Int63n(2)]
-		s += string('0'+RandomNumber(int64(num),int64(num+25)))
+		randomNum := RandomNumber(int64(num),int64(num+25))
+		s += string('0'+randomNum)
 	}
 	return s
 }
