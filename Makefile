@@ -1,7 +1,7 @@
 migrateup:
-	migrate -path ./internal/repository/migration -database "postgresql://root:secret@localhost:5434/debter?sslmode=disable" -verbose up
+	migrate -path ./internal/migration -database ${DB_URL} -verbose up
 migratedown:
-	migrate -path ./internal/repository/migration -database "postgresql://root:secret@localhost:5434/debter?sslmode=disable" -verbose down
+	migrate -path ./internal/migration -database ${DB_URL} -verbose down
 
 .PHONY: migrateup migratedown
 

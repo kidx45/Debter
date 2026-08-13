@@ -2,7 +2,8 @@ package outbound
 
 import (
 	"database/sql"
-	"github.com/kidx45/Debter/internal/port/outbound/db"
+
+	"github.com/kidx45/Debter/internal/adapter/outbound/db"
 )
 
 type Repository interface {

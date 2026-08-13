@@ -7,8 +7,12 @@ RETURNING *;
 SELECT * FROM users 
 WHERE username = $1;
 
--- name: UpdateUserNameByUsername :exec
+-- name: UpdateFullNameByUsername :exec
 UPDATE users SET full_name = $1
+WHERE username = $2;
+
+-- name: UpdateUserNameByUsername :exec
+UPDATE users SET username = $1
 WHERE username = $2;
 
 -- name: DeleteUserByUsername :exec

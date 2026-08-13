@@ -1,9 +1,9 @@
 version: "1"
 packages:
   - name: "db"  
-    path: "./internal/port/outbound/db"
-    queries: "./internal/port/outbound/query"
-    schema: "./internal/port/outbound/migration"
+    path: "./internal/adapter/outbound/db"
+    queries: "./internal/query"
+    schema: "./internal/migration"
     engine: "postgresql"
     emit_prepared_queries: true
     emit_interface: true

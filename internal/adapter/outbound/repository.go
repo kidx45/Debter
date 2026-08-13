@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/kidx45/Debter/internal/port/outbound"
-	"github.com/kidx45/Debter/internal/port/outbound/db"
+	"github.com/kidx45/Debter/internal/adapter/outbound/db"
 )
 
 func NewRepository(conn *sql.DB) outbound.Repository {
