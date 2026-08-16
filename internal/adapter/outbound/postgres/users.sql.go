@@ -7,21 +7,19 @@ package db
 
 import (
 	"context"
-	"time"
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (username, hashed_password, full_name, email, created_at)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO users (username, hashed_password, full_name, email)
+VALUES ($1, $2, $3, $4)
 RETURNING id, username, hashed_password, full_name, email, created_at
 `
 
 type CreateUserParams struct {
-	Username       string    `json:"username"`
-	HashedPassword string    `json:"hashedPassword"`
-	FullName       string    `json:"fullName"`
-	Email          string    `json:"email"`
-	CreatedAt      time.Time `json:"createdAt"`
+	Username       string `json:"username"`
+	HashedPassword string `json:"hashedPassword"`
+	FullName       string `json:"fullName"`
+	Email          string `json:"email"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -30,7 +28,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.HashedPassword,
 		arg.FullName,
 		arg.Email,
-		arg.CreatedAt,
 	)
 	var i User
 	err := row.Scan(
@@ -73,17 +70,52 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 	return i, err
 }
 
-const updateUserNameByUsername = `-- name: UpdateUserNameByUsername :exec
+const updateFullNameByUsername = `-- name: UpdateFullNameByUsername :one
 UPDATE users SET full_name = $1
 WHERE username = $2
+RETURNING id, username, hashed_password, full_name, email, created_at
 `
 
-type UpdateUserNameByUsernameParams struct {
+type UpdateFullNameByUsernameParams struct {
 	FullName string `json:"fullName"`
 	Username string `json:"username"`
 }
 
-func (q *Queries) UpdateUserNameByUsername(ctx context.Context, arg UpdateUserNameByUsernameParams) error {
-	_, err := q.exec(ctx, q.updateUserNameByUsernameStmt, updateUserNameByUsername, arg.FullName, arg.Username)
-	return err
+func (q *Queries) UpdateFullNameByUsername(ctx context.Context, arg UpdateFullNameByUsernameParams) (User, error) {
+	row := q.queryRow(ctx, q.updateFullNameByUsernameStmt, updateFullNameByUsername, arg.FullName, arg.Username)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.HashedPassword,
+		&i.FullName,
+		&i.Email,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const updateUserNameByUsername = `-- name: UpdateUserNameByUsername :one
+UPDATE users SET username = $2
+WHERE username = $1
+RETURNING id, username, hashed_password, full_name, email, created_at
+`
+
+type UpdateUserNameByUsernameParams struct {
+	Username    string `json:"username"`
+	NewUsername string `json:"newUsername"`
+}
+
+func (q *Queries) UpdateUserNameByUsername(ctx context.Context, arg UpdateUserNameByUsernameParams) (User, error) {
+	row := q.queryRow(ctx, q.updateUserNameByUsernameStmt, updateUserNameByUsername, arg.Username, arg.NewUsername)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.HashedPassword,
+		&i.FullName,
+		&i.Email,
+		&i.CreatedAt,
+	)
+	return i, err
 }

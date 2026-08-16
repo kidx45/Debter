@@ -45,6 +45,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getUserByUsernameStmt, err = db.PrepareContext(ctx, getUserByUsername); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserByUsername: %w", err)
 	}
+	if q.updateFullNameByUsernameStmt, err = db.PrepareContext(ctx, updateFullNameByUsername); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateFullNameByUsername: %w", err)
+	}
 	if q.updateUserNameByUsernameStmt, err = db.PrepareContext(ctx, updateUserNameByUsername); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateUserNameByUsername: %w", err)
 	}
@@ -86,6 +89,11 @@ func (q *Queries) Close() error {
 	if q.getUserByUsernameStmt != nil {
 		if cerr := q.getUserByUsernameStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getUserByUsernameStmt: %w", cerr)
+		}
+	}
+	if q.updateFullNameByUsernameStmt != nil {
+		if cerr := q.updateFullNameByUsernameStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateFullNameByUsernameStmt: %w", cerr)
 		}
 	}
 	if q.updateUserNameByUsernameStmt != nil {
@@ -139,6 +147,7 @@ type Queries struct {
 	getEntriesByAccountIdStmt       *sql.Stmt
 	getEntriesByCategoryAndTypeStmt *sql.Stmt
 	getUserByUsernameStmt           *sql.Stmt
+	updateFullNameByUsernameStmt    *sql.Stmt
 	updateUserNameByUsernameStmt    *sql.Stmt
 }
 
@@ -153,6 +162,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getEntriesByAccountIdStmt:       q.getEntriesByAccountIdStmt,
 		getEntriesByCategoryAndTypeStmt: q.getEntriesByCategoryAndTypeStmt,
 		getUserByUsernameStmt:           q.getUserByUsernameStmt,
+		updateFullNameByUsernameStmt:    q.updateFullNameByUsernameStmt,
 		updateUserNameByUsernameStmt:    q.updateUserNameByUsernameStmt,
 	}
 }
