@@ -16,7 +16,8 @@ type Querier interface {
 	GetEntriesByAccountId(ctx context.Context, accountID int64) ([]Entry, error)
 	GetEntriesByCategoryAndType(ctx context.Context, arg GetEntriesByCategoryAndTypeParams) ([]GetEntriesByCategoryAndTypeRow, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
-	UpdateUserNameByUsername(ctx context.Context, arg UpdateUserNameByUsernameParams) error
+	UpdateFullNameByUsername(ctx context.Context, arg UpdateFullNameByUsernameParams) (User, error)
+	UpdateUserNameByUsername(ctx context.Context, arg UpdateUserNameByUsernameParams) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)

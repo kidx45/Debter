@@ -7,7 +7,7 @@ import (
 	"github.com/kidx45/Debter/internal/port/outbound"
 )
 
-func NewRepository(conn *sql.DB) outbound.Repository {
+func NewPostgresUserRepository(conn *sql.DB) outbound.UserRepository {
 	return &outbound.SqlRepository{
 		Db: conn,
 		Queries: db.New(conn),
