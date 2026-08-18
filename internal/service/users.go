@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-
 	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
 	"github.com/kidx45/Debter/internal/port/outbound"
+	"github.com/lib/pq"
 )
 type UserService struct {
 	DB outbound.UserRepository
@@ -28,6 +28,12 @@ func (u *UserService) CreateUser(ctx context.Context, req db.User) (db.User, err
 	}
 	res, err := u.DB.CreateUser(ctx, arg)
 	if err != nil {
+		if pqerr, ok := err.(*pq.Error); ok {
+			switch pqerr.Code.Name(){
+				case "unique_violation":
+					return db.User{}, fmt.Errorf("Email or Username has been already used")
+			}
+		}
 		return db.User{}, err
 	}
 	return res,err
