@@ -11,19 +11,27 @@ import (
 )
 
 const filterEntriesByDate = `-- name: FilterEntriesByDate :many
-SELECT id, account_id, amount, type, category, created_at FROM entries
-WHERE account_id = $1 AND created_at >= $2 AND created_at <= $3
-ORDER BY created_at DESC
+SELECT e.id, e.account_id, e.amount, e.type, e.category, e.created_at FROM entries e
+JOIN accounts a ON a.id = e.account_id
+WHERE e.account_id = $1 AND a.user_id = $2
+AND e.created_at >= $3 AND e.created_at <= $4
+ORDER BY e.created_at DESC
 `
 
 type FilterEntriesByDateParams struct {
 	AccountID   int64     `json:"accountId"`
+	UserID      int64     `json:"userId"`
 	CreatedAt   time.Time `json:"createdAt"`
 	CreatedAt_2 time.Time `json:"createdAt2"`
 }
 
 func (q *Queries) FilterEntriesByDate(ctx context.Context, arg FilterEntriesByDateParams) ([]Entry, error) {
-	rows, err := q.query(ctx, q.filterEntriesByDateStmt, filterEntriesByDate, arg.AccountID, arg.CreatedAt, arg.CreatedAt_2)
+	rows, err := q.query(ctx, q.filterEntriesByDateStmt, filterEntriesByDate,
+		arg.AccountID,
+		arg.UserID,
+		arg.CreatedAt,
+		arg.CreatedAt_2,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -53,12 +61,19 @@ func (q *Queries) FilterEntriesByDate(ctx context.Context, arg FilterEntriesByDa
 }
 
 const getEntriesByAccountId = `-- name: GetEntriesByAccountId :many
-SELECT id, account_id, amount, type, category, created_at FROM entries 
-WHERE account_id = $1 ORDER BY created_at DESC
+SELECT e.id, e.account_id, e.amount, e.type, e.category, e.created_at FROM entries e
+JOIN accounts a ON a.id = e.account_id
+WHERE e.account_id = $1 AND a.user_id = $2
+ORDER BY e.created_at DESC
 `
 
-func (q *Queries) GetEntriesByAccountId(ctx context.Context, accountID int64) ([]Entry, error) {
-	rows, err := q.query(ctx, q.getEntriesByAccountIdStmt, getEntriesByAccountId, accountID)
+type GetEntriesByAccountIdParams struct {
+	AccountID int64 `json:"accountId"`
+	UserID    int64 `json:"userId"`
+}
+
+func (q *Queries) GetEntriesByAccountId(ctx context.Context, arg GetEntriesByAccountIdParams) ([]Entry, error) {
+	rows, err := q.query(ctx, q.getEntriesByAccountIdStmt, getEntriesByAccountId, arg.AccountID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -88,15 +103,17 @@ func (q *Queries) GetEntriesByAccountId(ctx context.Context, accountID int64) ([
 }
 
 const getEntriesByCategoryAndType = `-- name: GetEntriesByCategoryAndType :many
-SELECT category, SUM(amount) AS total
-FROM entries
-WHERE account_id = $1 AND
-type = $2
-GROUP BY category ORDER BY category DESC
+SELECT e.category, SUM(e.amount) AS total
+FROM entries e
+JOIN accounts a ON a.id = e.account_id
+WHERE e.account_id = $1 AND a.user_id = $2
+AND e.type = $3
+GROUP BY e.category ORDER BY e.category DESC
 `
 
 type GetEntriesByCategoryAndTypeParams struct {
 	AccountID int64  `json:"accountId"`
+	UserID    int64  `json:"userId"`
 	Type      string `json:"type"`
 }
 
@@ -106,7 +123,7 @@ type GetEntriesByCategoryAndTypeRow struct {
 }
 
 func (q *Queries) GetEntriesByCategoryAndType(ctx context.Context, arg GetEntriesByCategoryAndTypeParams) ([]GetEntriesByCategoryAndTypeRow, error) {
-	rows, err := q.query(ctx, q.getEntriesByCategoryAndTypeStmt, getEntriesByCategoryAndType, arg.AccountID, arg.Type)
+	rows, err := q.query(ctx, q.getEntriesByCategoryAndTypeStmt, getEntriesByCategoryAndType, arg.AccountID, arg.UserID, arg.Type)
 	if err != nil {
 		return nil, err
 	}

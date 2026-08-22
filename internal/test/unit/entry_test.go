@@ -30,20 +30,21 @@ func NewTestEntryService(t *testing.T, DB outbound.EntryRepository) *service.Ent
 }
 
 func TestGetEntriesByAccountId(t *testing.T) {
+	userID := util.RandomNumber(1, 100)
 	entries := []db.Entry{RandomEntry(t), RandomEntry(t)}
 	accountID := entries[0].AccountID
 
 	testCases := []struct {
 		name            string
-		accountID       int64
+		arg             db.GetEntriesByAccountIdParams
 		buildRepository func(repository *mockrepository.MockEntryRepository)
 		checkResponse   func(t *testing.T, res []db.Entry, err error)
 	}{
 		{
-			name:      "OK",
-			accountID: accountID,
+			name: "OK",
+			arg:  db.GetEntriesByAccountIdParams{AccountID: accountID, UserID: userID},
 			buildRepository: func(repository *mockrepository.MockEntryRepository) {
-				repository.EXPECT().GetEntriesByAccountId(gomock.Any(), gomock.Eq(accountID)).Return(entries, nil)
+				repository.EXPECT().GetEntriesByAccountId(gomock.Any(), gomock.Eq(db.GetEntriesByAccountIdParams{AccountID: accountID, UserID: userID})).Return(entries, nil)
 			},
 			checkResponse: func(t *testing.T, res []db.Entry, err error) {
 				require.NoError(t, err)
@@ -51,10 +52,10 @@ func TestGetEntriesByAccountId(t *testing.T) {
 			},
 		},
 		{
-			name:      "Empty",
-			accountID: accountID,
+			name: "Empty",
+			arg:  db.GetEntriesByAccountIdParams{AccountID: accountID, UserID: userID},
 			buildRepository: func(repository *mockrepository.MockEntryRepository) {
-				repository.EXPECT().GetEntriesByAccountId(gomock.Any(), gomock.Eq(accountID)).Return([]db.Entry{}, nil)
+				repository.EXPECT().GetEntriesByAccountId(gomock.Any(), gomock.Eq(db.GetEntriesByAccountIdParams{AccountID: accountID, UserID: userID})).Return([]db.Entry{}, nil)
 			},
 			checkResponse: func(t *testing.T, res []db.Entry, err error) {
 				require.Error(t, err)
@@ -72,16 +73,18 @@ func TestGetEntriesByAccountId(t *testing.T) {
 			repository := mockrepository.NewMockEntryRepository(ctrl)
 			testCases[i].buildRepository(repository)
 			EntryService := NewTestEntryService(t, repository)
-			res, err := EntryService.GetEntriesByAccountId(context.Background(), testCases[i].accountID)
+			res, err := EntryService.GetEntriesByAccountId(context.Background(), testCases[i].arg)
 			testCases[i].checkResponse(t, res, err)
 		})
 	}
 }
 
 func TestFilterEntriesByDate(t *testing.T) {
+	userID := util.RandomNumber(1, 100)
 	entries := []db.Entry{RandomEntry(t)}
 	arg := db.FilterEntriesByDateParams{
 		AccountID:   entries[0].AccountID,
+		UserID:      userID,
 		CreatedAt:   time.Now().Add(-24 * time.Hour),
 		CreatedAt_2: time.Now(),
 	}
@@ -131,12 +134,14 @@ func TestFilterEntriesByDate(t *testing.T) {
 }
 
 func TestGetEntriesByCategoryAndType(t *testing.T) {
+	userID := util.RandomNumber(1, 100)
 	results := []db.GetEntriesByCategoryAndTypeRow{
 		{Category: "food", Total: 5000},
 		{Category: "transport", Total: 2000},
 	}
 	arg := db.GetEntriesByCategoryAndTypeParams{
 		AccountID: util.RandomNumber(1, 100),
+		UserID:    userID,
 		Type:      "expense",
 	}
 

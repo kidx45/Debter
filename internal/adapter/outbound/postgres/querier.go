@@ -9,14 +9,18 @@ import (
 )
 
 type Querier interface {
+	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteUserByUsername(ctx context.Context, username string) error
 	FilterEntriesByDate(ctx context.Context, arg FilterEntriesByDateParams) ([]Entry, error)
 	GetAccountsByUserId(ctx context.Context, userID int64) ([]Account, error)
-	GetEntriesByAccountId(ctx context.Context, accountID int64) ([]Entry, error)
+	GetEntriesByAccountId(ctx context.Context, arg GetEntriesByAccountIdParams) ([]Entry, error)
 	GetEntriesByCategoryAndType(ctx context.Context, arg GetEntriesByCategoryAndTypeParams) ([]GetEntriesByCategoryAndTypeRow, error)
+	GetSessionByRefreshToken(ctx context.Context, refreshToken string) (Session, error)
+	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 	UpdateFullNameByUsername(ctx context.Context, arg UpdateFullNameByUsernameParams) (User, error)
+	UpdateSessionRefreshToken(ctx context.Context, arg UpdateSessionRefreshTokenParams) (Session, error)
 	UpdateUserNameByUsername(ctx context.Context, arg UpdateUserNameByUsernameParams) (User, error)
 }
 

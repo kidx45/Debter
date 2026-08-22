@@ -24,6 +24,9 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.createSessionStmt, err = db.PrepareContext(ctx, createSession); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateSession: %w", err)
+	}
 	if q.createUserStmt, err = db.PrepareContext(ctx, createUser); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateUser: %w", err)
 	}
@@ -42,11 +45,20 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getEntriesByCategoryAndTypeStmt, err = db.PrepareContext(ctx, getEntriesByCategoryAndType); err != nil {
 		return nil, fmt.Errorf("error preparing query GetEntriesByCategoryAndType: %w", err)
 	}
+	if q.getSessionByRefreshTokenStmt, err = db.PrepareContext(ctx, getSessionByRefreshToken); err != nil {
+		return nil, fmt.Errorf("error preparing query GetSessionByRefreshToken: %w", err)
+	}
+	if q.getUserStmt, err = db.PrepareContext(ctx, getUser); err != nil {
+		return nil, fmt.Errorf("error preparing query GetUser: %w", err)
+	}
 	if q.getUserByUsernameStmt, err = db.PrepareContext(ctx, getUserByUsername); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserByUsername: %w", err)
 	}
 	if q.updateFullNameByUsernameStmt, err = db.PrepareContext(ctx, updateFullNameByUsername); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateFullNameByUsername: %w", err)
+	}
+	if q.updateSessionRefreshTokenStmt, err = db.PrepareContext(ctx, updateSessionRefreshToken); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateSessionRefreshToken: %w", err)
 	}
 	if q.updateUserNameByUsernameStmt, err = db.PrepareContext(ctx, updateUserNameByUsername); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateUserNameByUsername: %w", err)
@@ -56,6 +68,11 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
+	if q.createSessionStmt != nil {
+		if cerr := q.createSessionStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createSessionStmt: %w", cerr)
+		}
+	}
 	if q.createUserStmt != nil {
 		if cerr := q.createUserStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createUserStmt: %w", cerr)
@@ -86,6 +103,16 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getEntriesByCategoryAndTypeStmt: %w", cerr)
 		}
 	}
+	if q.getSessionByRefreshTokenStmt != nil {
+		if cerr := q.getSessionByRefreshTokenStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getSessionByRefreshTokenStmt: %w", cerr)
+		}
+	}
+	if q.getUserStmt != nil {
+		if cerr := q.getUserStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getUserStmt: %w", cerr)
+		}
+	}
 	if q.getUserByUsernameStmt != nil {
 		if cerr := q.getUserByUsernameStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getUserByUsernameStmt: %w", cerr)
@@ -94,6 +121,11 @@ func (q *Queries) Close() error {
 	if q.updateFullNameByUsernameStmt != nil {
 		if cerr := q.updateFullNameByUsernameStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateFullNameByUsernameStmt: %w", cerr)
+		}
+	}
+	if q.updateSessionRefreshTokenStmt != nil {
+		if cerr := q.updateSessionRefreshTokenStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateSessionRefreshTokenStmt: %w", cerr)
 		}
 	}
 	if q.updateUserNameByUsernameStmt != nil {
@@ -140,14 +172,18 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 type Queries struct {
 	db                              DBTX
 	tx                              *sql.Tx
+	createSessionStmt               *sql.Stmt
 	createUserStmt                  *sql.Stmt
 	deleteUserByUsernameStmt        *sql.Stmt
 	filterEntriesByDateStmt         *sql.Stmt
 	getAccountsByUserIdStmt         *sql.Stmt
 	getEntriesByAccountIdStmt       *sql.Stmt
 	getEntriesByCategoryAndTypeStmt *sql.Stmt
+	getSessionByRefreshTokenStmt    *sql.Stmt
+	getUserStmt                     *sql.Stmt
 	getUserByUsernameStmt           *sql.Stmt
 	updateFullNameByUsernameStmt    *sql.Stmt
+	updateSessionRefreshTokenStmt   *sql.Stmt
 	updateUserNameByUsernameStmt    *sql.Stmt
 }
 
@@ -155,14 +191,18 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
 		db:                              tx,
 		tx:                              tx,
+		createSessionStmt:               q.createSessionStmt,
 		createUserStmt:                  q.createUserStmt,
 		deleteUserByUsernameStmt:        q.deleteUserByUsernameStmt,
 		filterEntriesByDateStmt:         q.filterEntriesByDateStmt,
 		getAccountsByUserIdStmt:         q.getAccountsByUserIdStmt,
 		getEntriesByAccountIdStmt:       q.getEntriesByAccountIdStmt,
 		getEntriesByCategoryAndTypeStmt: q.getEntriesByCategoryAndTypeStmt,
+		getSessionByRefreshTokenStmt:    q.getSessionByRefreshTokenStmt,
+		getUserStmt:                     q.getUserStmt,
 		getUserByUsernameStmt:           q.getUserByUsernameStmt,
 		updateFullNameByUsernameStmt:    q.updateFullNameByUsernameStmt,
+		updateSessionRefreshTokenStmt:   q.updateSessionRefreshTokenStmt,
 		updateUserNameByUsernameStmt:    q.updateUserNameByUsernameStmt,
 	}
 }

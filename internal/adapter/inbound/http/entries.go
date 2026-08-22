@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/kidx45/Debter/internal/adapter/inbound/middleware"
 	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
 	"github.com/kidx45/Debter/internal/service"
 )
@@ -22,6 +23,12 @@ func NewEntryAdapter(EntryService service.EntryService) *EntryAdapter {
 }
 
 func (a *EntryAdapter) GetEntriesByAccountId(ctx *gin.Context) {
+	payload := middleware.GetAuthPayload(ctx)
+	if payload == nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "authorization payload is not provided"})
+		return
+	}
+
 	accountIDStr := ctx.Param("accountId")
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
@@ -29,7 +36,12 @@ func (a *EntryAdapter) GetEntriesByAccountId(ctx *gin.Context) {
 		return
 	}
 
-	res, err := a.EntryService.GetEntriesByAccountId(ctx.Request.Context(), accountID)
+	arg := db.GetEntriesByAccountIdParams{
+		AccountID: accountID,
+		UserID:    payload.UserID,
+	}
+
+	res, err := a.EntryService.GetEntriesByAccountId(ctx.Request.Context(), arg)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -43,6 +55,12 @@ func (a *EntryAdapter) GetEntriesByAccountId(ctx *gin.Context) {
 }
 
 func (a *EntryAdapter) FilterEntriesByDate(ctx *gin.Context) {
+	payload := middleware.GetAuthPayload(ctx)
+	if payload == nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "authorization payload is not provided"})
+		return
+	}
+
 	accountIDStr := ctx.Param("accountId")
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
@@ -67,6 +85,7 @@ func (a *EntryAdapter) FilterEntriesByDate(ctx *gin.Context) {
 
 	arg := db.FilterEntriesByDateParams{
 		AccountID:   accountID,
+		UserID:      payload.UserID,
 		CreatedAt:   from,
 		CreatedAt_2: to,
 	}
@@ -81,6 +100,12 @@ func (a *EntryAdapter) FilterEntriesByDate(ctx *gin.Context) {
 }
 
 func (a *EntryAdapter) GetEntriesByCategoryAndType(ctx *gin.Context) {
+	payload := middleware.GetAuthPayload(ctx)
+	if payload == nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "authorization payload is not provided"})
+		return
+	}
+
 	accountIDStr := ctx.Param("accountId")
 	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
 	if err != nil {
@@ -96,6 +121,7 @@ func (a *EntryAdapter) GetEntriesByCategoryAndType(ctx *gin.Context) {
 
 	arg := db.GetEntriesByCategoryAndTypeParams{
 		AccountID: accountID,
+		UserID:    payload.UserID,
 		Type:      entryType,
 	}
 

@@ -3,9 +3,15 @@ package util
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/kidx45/Debter/internal/domain"
 	"github.com/spf13/viper"
+)
+
+const (
+	defaultAccessTokenDuration  = 15 * time.Minute
+	defaultRefreshTokenDuration = 7 * 24 * time.Hour
 )
 
 func LoadEnv(path string) (domain.Config, error) {
@@ -19,20 +25,29 @@ func LoadEnv(path string) (domain.Config, error) {
 		DB_DRIVER_NAME := os.Getenv("DB_DRIVER_NAME")
 		PORT := os.Getenv("PORT")
 		DB_URL_TEST := os.Getenv("DB_URL_TEST")
-		if DB_URL == "" || DB_DRIVER_NAME == "" || PORT == "" || DB_URL_TEST == "" {
+		TOKEN_SYMMETRIC_KEY := os.Getenv("TOKEN_SYMMETRIC_KEY")
+		if DB_URL == "" || DB_DRIVER_NAME == "" || PORT == "" || DB_URL_TEST == "" || TOKEN_SYMMETRIC_KEY == "" {
 			return domain.Config{}, fmt.Errorf("Incomplete Env Configuration")
 		}
 		config = domain.Config{
-			DB_URL:         DB_URL,
-			DB_DRIVER_NAME: DB_DRIVER_NAME,
-			PORT:           PORT,
-			DB_URL_TEST:    DB_URL_TEST,
+			DB_URL:              DB_URL,
+			DB_DRIVER_NAME:      DB_DRIVER_NAME,
+			PORT:                PORT,
+			DB_URL_TEST:         DB_URL_TEST,
+			TOKEN_SYMMETRIC_KEY: TOKEN_SYMMETRIC_KEY,
 		}
-		return config, nil
-	}
-
-	if err := viper.Unmarshal(&config); err != nil {
+	} else if err := viper.Unmarshal(&config); err != nil {
 		return domain.Config{}, err
 	}
+
+	fmt.Print(len(config.TOKEN_SYMMETRIC_KEY))
+
+	if config.ACCESS_TOKEN_DURATION <= 0 {
+		config.ACCESS_TOKEN_DURATION = defaultAccessTokenDuration
+	}
+	if config.REFRESH_TOKEN_DURATION <= 0 {
+		config.REFRESH_TOKEN_DURATION = defaultRefreshTokenDuration
+	}
+
 	return config, nil
 }

@@ -19,11 +19,11 @@ func NewEntryService(DB outbound.EntryRepository) *EntryService {
 	}
 }
 
-func (s *EntryService) GetEntriesByAccountId(ctx context.Context, accountID int64) ([]db.Entry, error) {
-	res, err := s.DB.GetEntriesByAccountId(ctx, accountID)
+func (s *EntryService) GetEntriesByAccountId(ctx context.Context, arg db.GetEntriesByAccountIdParams) ([]db.Entry, error) {
+	res, err := s.DB.GetEntriesByAccountId(ctx, arg)
 	if err != nil {
-		if err == sql.ErrNoRows{
-			return nil, fmt.Errorf("no entires found for this account ID")
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("no entries found for this account ID")
 		}
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (s *EntryService) GetEntriesByCategoryAndType(ctx context.Context, arg db.G
 	res, err := s.DB.GetEntriesByCategoryAndType(ctx, arg)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("no entires found for this account ID")
+			return nil, fmt.Errorf("no entries found for this account ID")
 		}
 		return nil, err
 	}

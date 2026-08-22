@@ -3,6 +3,7 @@ package http
 import (
 	"database/sql"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
@@ -20,11 +21,29 @@ func NewUserAdapter(UserService service.UserService) *UserAdapter {
 	}
 }
 
+type userResponse struct {
+	ID        int64     `json:"id"`
+	Username  string    `json:"username"`
+	FullName  string    `json:"fullName"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+func newUserResponse(user db.User) userResponse {
+	return userResponse{
+		ID:        user.ID,
+		Username:  user.Username,
+		FullName:  user.FullName,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+	}
+}
+
 type createUserRequest struct {
-	Username       string `json:"username" binding:"required"`
-	HashedPassword string `json:"hashedPassword" binding:"required"`
-	FullName       string `json:"fullName" binding:"required"`
-	Email          string `json:"email" binding:"required"`
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required,min=8"`
+	FullName string `json:"fullName" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
 }
 
 func (a *UserAdapter) CreateUser(ctx *gin.Context) {
@@ -36,7 +55,7 @@ func (a *UserAdapter) CreateUser(ctx *gin.Context) {
 
 	user := db.User{
 		Username:       req.Username,
-		HashedPassword: req.HashedPassword,
+		HashedPassword: req.Password,
 		FullName:       req.FullName,
 		Email:          req.Email,
 	}
@@ -54,7 +73,7 @@ func (a *UserAdapter) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, res)
+	ctx.JSON(http.StatusCreated, newUserResponse(res))
 }
 
 func (a *UserAdapter) GetUserByUsername(ctx *gin.Context) {
@@ -70,7 +89,7 @@ func (a *UserAdapter) GetUserByUsername(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, newUserResponse(res))
 }
 
 type updateFullNameRequest struct {
@@ -96,7 +115,7 @@ func (a *UserAdapter) UpdateFullNameByUsername(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, newUserResponse(res))
 }
 
 type updateUsernameRequest struct {
@@ -122,7 +141,7 @@ func (a *UserAdapter) UpdateUserNameByUsername(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, newUserResponse(res))
 }
 
 func (a *UserAdapter) DeleteUserByUsername(ctx *gin.Context) {
