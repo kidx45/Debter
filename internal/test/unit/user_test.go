@@ -43,13 +43,14 @@ func TestCreateUser(t *testing.T) {
 			name: "OK",
 			req:  user,
 			buildRepository: func(repository *mockrepository.MockUserRepository) {
-				arg := db.CreateUserParams{
-					Username:       user.Username,
-					HashedPassword: user.HashedPassword,
-					FullName:       user.FullName,
-					Email:          user.Email,
-				}
-				repository.EXPECT().CreateUser(gomock.Any(), gomock.Eq(arg)).Return(user, nil)
+				repository.EXPECT().CreateUser(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, arg db.CreateUserParams) (db.User, error) {
+					require.NoError(t, util.CheckPassword(user.HashedPassword, arg.HashedPassword))
+					require.NotEqual(t, user.HashedPassword, arg.HashedPassword)
+					require.Equal(t, user.Username, arg.Username)
+					require.Equal(t, user.FullName, arg.FullName)
+					require.Equal(t, user.Email, arg.Email)
+					return user, nil
+				})
 			},
 			checkResponse: func(t *testing.T, res db.User, err error) {
 				require.NoError(t, err)
@@ -60,13 +61,10 @@ func TestCreateUser(t *testing.T) {
 			name: "Failed",
 			req:  user,
 			buildRepository: func(repository *mockrepository.MockUserRepository) {
-				arg := db.CreateUserParams{
-					Username:       user.Username,
-					HashedPassword: user.HashedPassword,
-					FullName:       user.FullName,
-					Email:          user.Email,
-				}
-				repository.EXPECT().CreateUser(gomock.Any(), gomock.Eq(arg)).Return(db.User{}, fmt.Errorf("duplicate key"))
+				repository.EXPECT().CreateUser(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, arg db.CreateUserParams) (db.User, error) {
+					require.NoError(t, util.CheckPassword(user.HashedPassword, arg.HashedPassword))
+					return db.User{}, fmt.Errorf("duplicate key")
+				})
 			},
 			checkResponse: func(t *testing.T, res db.User, err error) {
 				require.Error(t, err)

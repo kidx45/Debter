@@ -6,8 +6,9 @@ import (
 	"fmt"
 	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
 	"github.com/kidx45/Debter/internal/port/outbound"
-	"github.com/lib/pq"
+	"github.com/kidx45/Debter/internal/util"
 )
+
 type UserService struct {
 	DB outbound.UserRepository
 }
@@ -20,23 +21,21 @@ func NewUserService(DB outbound.UserRepository) *UserService {
 
 func (u *UserService) CreateUser(ctx context.Context, req db.User) (db.User, error) {
 	// TODO: Fetch users username quickly for the frontend
+	hashedPassword, err := util.HashPassword(req.HashedPassword)
+	if err != nil {
+		return db.User{}, err
+	}
 	arg := db.CreateUserParams{
-		Username: req.Username,
-		HashedPassword: req.HashedPassword,
-		FullName: req.FullName,
-		Email: req.Email,
+		Username:       req.Username,
+		HashedPassword: hashedPassword,
+		FullName:       req.FullName,
+		Email:          req.Email,
 	}
 	res, err := u.DB.CreateUser(ctx, arg)
 	if err != nil {
-		if pqerr, ok := err.(*pq.Error); ok {
-			switch pqerr.Code.Name(){
-				case "unique_violation":
-					return db.User{}, fmt.Errorf("Email or Username has been already used")
-			}
-		}
 		return db.User{}, err
 	}
-	return res,err
+	return res, err
 }
 
 func (u *UserService) GetUserByUsername(ctx context.Context, Username string) (db.User, error) {
@@ -67,7 +66,7 @@ func (u *UserService) UpdateFullNameByUsername(ctx context.Context, Username, Fu
 
 func (u *UserService) UpdateUserNameByUsername(ctx context.Context, Username, NewUsername string) (db.User, error) {
 	arg := db.UpdateUserNameByUsernameParams{
-		Username: Username,
+		Username:    Username,
 		NewUsername: NewUsername,
 	}
 	res, err := u.DB.UpdateUserNameByUsername(ctx, arg)

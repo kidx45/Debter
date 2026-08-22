@@ -2,9 +2,11 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/kidx45/Debter/internal/adapter/inbound/middleware"
+	"github.com/kidx45/Debter/internal/util/token"
 )
 
-func NewRouter(userAdapter *UserAdapter, accountAdapter *AccountAdapter, entryAdapter *EntryAdapter) *gin.Engine {
+func NewRouter(tokenMaker token.TokenMaker, userAdapter *UserAdapter, accountAdapter *AccountAdapter, entryAdapter *EntryAdapter, authAdapter *AuthAdapter) *gin.Engine {
 	router := gin.Default()
 
 	v1 := router.Group("/api/v1")
@@ -12,13 +14,19 @@ func NewRouter(userAdapter *UserAdapter, accountAdapter *AccountAdapter, entryAd
 		users := v1.Group("/users")
 		{
 			users.POST("", userAdapter.CreateUser)
-			users.GET("/:username", userAdapter.GetUserByUsername)
-			users.PUT("/:username/fullname", userAdapter.UpdateFullNameByUsername)
-			users.PUT("/:username/username", userAdapter.UpdateUserNameByUsername)
-			users.DELETE("/:username", userAdapter.DeleteUserByUsername)
+			users.POST("/login", authAdapter.Login)
+			users.POST("/renew_access", authAdapter.RenewAccessToken)
+
+			protected := users.Group("", middleware.AuthMiddleware(tokenMaker))
+			{
+				protected.GET("/:username", userAdapter.GetUserByUsername)
+				protected.PUT("/:username/fullname", userAdapter.UpdateFullNameByUsername)
+				protected.PUT("/:username/username", userAdapter.UpdateUserNameByUsername)
+				protected.DELETE("/:username", userAdapter.DeleteUserByUsername)
+			}
 		}
 
-		accounts := v1.Group("/accounts")
+		accounts := v1.Group("/accounts", middleware.AuthMiddleware(tokenMaker))
 		{
 			accounts.GET("/user/:userId", accountAdapter.GetAccountsByUserId)
 

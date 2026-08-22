@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	postgres "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,11 +41,26 @@ func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 	return m.recorder
 }
 
+// CreateSession mocks base method.
+func (m *MockRepository) CreateSession(ctx context.Context, arg db.CreateSessionParams) (db.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSession", ctx, arg)
+	ret0, _ := ret[0].(db.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSession indicates an expected call of CreateSession.
+func (mr *MockRepositoryMockRecorder) CreateSession(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSession", reflect.TypeOf((*MockRepository)(nil).CreateSession), ctx, arg)
+}
+
 // CreateUser mocks base method.
-func (m *MockRepository) CreateUser(ctx context.Context, arg postgres.CreateUserParams) (postgres.User, error) {
+func (m *MockRepository) CreateUser(ctx context.Context, arg db.CreateUserParams) (db.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUser", ctx, arg)
-	ret0, _ := ret[0].(postgres.User)
+	ret0, _ := ret[0].(db.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -71,10 +86,10 @@ func (mr *MockRepositoryMockRecorder) DeleteUserByUsername(ctx, username any) *g
 }
 
 // FilterEntriesByDate mocks base method.
-func (m *MockRepository) FilterEntriesByDate(ctx context.Context, arg postgres.FilterEntriesByDateParams) ([]postgres.Entry, error) {
+func (m *MockRepository) FilterEntriesByDate(ctx context.Context, arg db.FilterEntriesByDateParams) ([]db.Entry, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FilterEntriesByDate", ctx, arg)
-	ret0, _ := ret[0].([]postgres.Entry)
+	ret0, _ := ret[0].([]db.Entry)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -86,10 +101,10 @@ func (mr *MockRepositoryMockRecorder) FilterEntriesByDate(ctx, arg any) *gomock.
 }
 
 // GetAccountsByUserId mocks base method.
-func (m *MockRepository) GetAccountsByUserId(ctx context.Context, userID int64) ([]postgres.Account, error) {
+func (m *MockRepository) GetAccountsByUserId(ctx context.Context, userID int64) ([]db.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAccountsByUserId", ctx, userID)
-	ret0, _ := ret[0].([]postgres.Account)
+	ret0, _ := ret[0].([]db.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -101,25 +116,25 @@ func (mr *MockRepositoryMockRecorder) GetAccountsByUserId(ctx, userID any) *gomo
 }
 
 // GetEntriesByAccountId mocks base method.
-func (m *MockRepository) GetEntriesByAccountId(ctx context.Context, accountID int64) ([]postgres.Entry, error) {
+func (m *MockRepository) GetEntriesByAccountId(ctx context.Context, arg db.GetEntriesByAccountIdParams) ([]db.Entry, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEntriesByAccountId", ctx, accountID)
-	ret0, _ := ret[0].([]postgres.Entry)
+	ret := m.ctrl.Call(m, "GetEntriesByAccountId", ctx, arg)
+	ret0, _ := ret[0].([]db.Entry)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetEntriesByAccountId indicates an expected call of GetEntriesByAccountId.
-func (mr *MockRepositoryMockRecorder) GetEntriesByAccountId(ctx, accountID any) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) GetEntriesByAccountId(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEntriesByAccountId", reflect.TypeOf((*MockRepository)(nil).GetEntriesByAccountId), ctx, accountID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEntriesByAccountId", reflect.TypeOf((*MockRepository)(nil).GetEntriesByAccountId), ctx, arg)
 }
 
 // GetEntriesByCategoryAndType mocks base method.
-func (m *MockRepository) GetEntriesByCategoryAndType(ctx context.Context, arg postgres.GetEntriesByCategoryAndTypeParams) ([]postgres.GetEntriesByCategoryAndTypeRow, error) {
+func (m *MockRepository) GetEntriesByCategoryAndType(ctx context.Context, arg db.GetEntriesByCategoryAndTypeParams) ([]db.GetEntriesByCategoryAndTypeRow, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetEntriesByCategoryAndType", ctx, arg)
-	ret0, _ := ret[0].([]postgres.GetEntriesByCategoryAndTypeRow)
+	ret0, _ := ret[0].([]db.GetEntriesByCategoryAndTypeRow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -130,11 +145,41 @@ func (mr *MockRepositoryMockRecorder) GetEntriesByCategoryAndType(ctx, arg any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEntriesByCategoryAndType", reflect.TypeOf((*MockRepository)(nil).GetEntriesByCategoryAndType), ctx, arg)
 }
 
+// GetSessionByRefreshToken mocks base method.
+func (m *MockRepository) GetSessionByRefreshToken(ctx context.Context, refreshToken string) (db.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionByRefreshToken", ctx, refreshToken)
+	ret0, _ := ret[0].(db.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSessionByRefreshToken indicates an expected call of GetSessionByRefreshToken.
+func (mr *MockRepositoryMockRecorder) GetSessionByRefreshToken(ctx, refreshToken any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionByRefreshToken", reflect.TypeOf((*MockRepository)(nil).GetSessionByRefreshToken), ctx, refreshToken)
+}
+
+// GetUser mocks base method.
+func (m *MockRepository) GetUser(ctx context.Context, id int64) (db.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUser", ctx, id)
+	ret0, _ := ret[0].(db.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUser indicates an expected call of GetUser.
+func (mr *MockRepositoryMockRecorder) GetUser(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockRepository)(nil).GetUser), ctx, id)
+}
+
 // GetUserByUsername mocks base method.
-func (m *MockRepository) GetUserByUsername(ctx context.Context, username string) (postgres.User, error) {
+func (m *MockRepository) GetUserByUsername(ctx context.Context, username string) (db.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByUsername", ctx, username)
-	ret0, _ := ret[0].(postgres.User)
+	ret0, _ := ret[0].(db.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -146,10 +191,10 @@ func (mr *MockRepositoryMockRecorder) GetUserByUsername(ctx, username any) *gomo
 }
 
 // UpdateFullNameByUsername mocks base method.
-func (m *MockRepository) UpdateFullNameByUsername(ctx context.Context, arg postgres.UpdateFullNameByUsernameParams) (postgres.User, error) {
+func (m *MockRepository) UpdateFullNameByUsername(ctx context.Context, arg db.UpdateFullNameByUsernameParams) (db.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateFullNameByUsername", ctx, arg)
-	ret0, _ := ret[0].(postgres.User)
+	ret0, _ := ret[0].(db.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -160,11 +205,26 @@ func (mr *MockRepositoryMockRecorder) UpdateFullNameByUsername(ctx, arg any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFullNameByUsername", reflect.TypeOf((*MockRepository)(nil).UpdateFullNameByUsername), ctx, arg)
 }
 
+// UpdateSessionRefreshToken mocks base method.
+func (m *MockRepository) UpdateSessionRefreshToken(ctx context.Context, arg db.UpdateSessionRefreshTokenParams) (db.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSessionRefreshToken", ctx, arg)
+	ret0, _ := ret[0].(db.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateSessionRefreshToken indicates an expected call of UpdateSessionRefreshToken.
+func (mr *MockRepositoryMockRecorder) UpdateSessionRefreshToken(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSessionRefreshToken", reflect.TypeOf((*MockRepository)(nil).UpdateSessionRefreshToken), ctx, arg)
+}
+
 // UpdateUserNameByUsername mocks base method.
-func (m *MockRepository) UpdateUserNameByUsername(ctx context.Context, arg postgres.UpdateUserNameByUsernameParams) (postgres.User, error) {
+func (m *MockRepository) UpdateUserNameByUsername(ctx context.Context, arg db.UpdateUserNameByUsernameParams) (db.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateUserNameByUsername", ctx, arg)
-	ret0, _ := ret[0].(postgres.User)
+	ret0, _ := ret[0].(db.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
