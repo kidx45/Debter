@@ -37,7 +37,7 @@ jobs:
         go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
     - name: migrate-schema
       run: |
-        make migrate up DB_URL="${{ secrets.DB_URL }}"
+        make migrateup DB_URL="${{ secrets.DB_URL }}"
     - name: create-env-for-codebase
       run: |
         echo "DB_URL=${{ secrets.DB_URL }}" >> .env
