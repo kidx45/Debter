@@ -16,7 +16,7 @@ import (
 var testDB *sql.DB
 
 func TestMain(m *testing.M) {
-	config, err := util.LoadEnv("../../test.env")
+	config, err := util.LoadEnv("../../../../.env")
 	if err != nil {
 		log.Fatalf("Error loading the Env Configuration: %s", err)
 	}
