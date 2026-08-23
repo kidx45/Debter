@@ -1,0 +1,56 @@
+name: Run Integration and Unit Tests
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-and-setup:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: ${{secrets.DB_USER}}
+          POSTGRES_PASSWORD: ${{secrets.DB_PASSWORD}}
+          POSTGRES_DB: ${{secrets.DB_NAME}}
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-timeout 5s
+          --health-interval 10s
+          --health-retries 5
+    steps:
+    - uses: actions/checkout@v4
+    - name: setup-golang
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.26.5'
+    - name: setup-migration
+      run: |
+        go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+    - name: migrate-schema
+      run: |
+        make migrate up DB_URL="${{ secrets.DB_URL }}"
+    - name: create-env-for-codebase
+      run: |
+        echo "DB_URL=${{ secrets.DB_URL }}" >> .env
+        echo "PORT=${{ secrets.PORT }}" >> .env
+        echo "DB_DRIVER_NAME=${{ secrets.DB_DRIVER_NAME }}" >> .env
+        echo "TOKEN_SYMMETRIC_KEY=${{ secrets.TOKEN_SYMMETRIC_KEY }}" >> .env
+        echo "ACCESS_TOKEN_DURATION=${{ secrets.ACCESS_TOKEN_DURATION }}" >> .env
+        echo "REFRESH_TOKEN_DURATION=${{ secrets.REFRESH_TOKEN_DURATION}}" >> .env
+    - name: tidy-golang
+      run: |
+        go mod tidy
+    - name: run-tests
+      run: |
+        go test -v -cover ./...
+
+    
