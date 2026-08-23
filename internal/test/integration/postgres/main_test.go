@@ -16,12 +16,12 @@ import (
 var testDB *sql.DB
 
 func TestMain(m *testing.M) {
-	config, err := util.LoadEnv("../../test.env")
+	config, err := util.LoadEnv("../../../../.env")
 	if err != nil {
 		log.Fatalf("Error loading the Env Configuration: %s", err)
 	}
 
-	testDB, err = sql.Open(config.DB_DRIVER_NAME, config.DB_URL_TEST)
+	testDB, err = sql.Open(config.DB_DRIVER_NAME, config.DB_URL)
 	if err != nil {
 		log.Fatalf("Error setting up db connection: %s", err)
 	}
