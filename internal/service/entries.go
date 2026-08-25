@@ -2,29 +2,26 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"time"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	"github.com/kidx45/Debter/internal/domain"
 	"github.com/kidx45/Debter/internal/port/outbound"
 )
 
 type EntryService struct {
-	DB outbound.EntryRepository
+	EntryRepo outbound.EntryRepository
 }
 
-func NewEntryService(DB outbound.EntryRepository) *EntryService {
+func NewEntryService(entryRepo outbound.EntryRepository) *EntryService {
 	return &EntryService{
-		DB: DB,
+		EntryRepo: entryRepo,
 	}
 }
 
-func (s *EntryService) GetEntriesByAccountId(ctx context.Context, arg db.GetEntriesByAccountIdParams) ([]db.Entry, error) {
-	res, err := s.DB.GetEntriesByAccountId(ctx, arg)
+func (s *EntryService) GetEntriesByAccountId(ctx context.Context, accountID, userID int64) ([]domain.Entry, error) {
+	res, err := s.EntryRepo.GetEntriesByAccountId(ctx, accountID, userID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("no entries found for this account ID")
-		}
 		return nil, err
 	}
 	if len(res) == 0 {
@@ -33,20 +30,13 @@ func (s *EntryService) GetEntriesByAccountId(ctx context.Context, arg db.GetEntr
 	return res, nil
 }
 
-func (s *EntryService) FilterEntriesByDate(ctx context.Context, arg db.FilterEntriesByDateParams) ([]db.Entry, error) {
-	res, err := s.DB.FilterEntriesByDate(ctx, arg)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
+func (s *EntryService) FilterEntriesByDate(ctx context.Context, accountID, userID int64, from, to time.Time) ([]domain.Entry, error) {
+	return s.EntryRepo.FilterEntriesByDate(ctx, accountID, userID, from, to)
 }
 
-func (s *EntryService) GetEntriesByCategoryAndType(ctx context.Context, arg db.GetEntriesByCategoryAndTypeParams) ([]db.GetEntriesByCategoryAndTypeRow, error) {
-	res, err := s.DB.GetEntriesByCategoryAndType(ctx, arg)
+func (s *EntryService) GetEntriesByCategoryAndType(ctx context.Context, accountID, userID int64, entryType string) ([]domain.CategorySummary, error) {
+	res, err := s.EntryRepo.GetEntriesByCategoryAndType(ctx, accountID, userID, entryType)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("no entries found for this account ID")
-		}
 		return nil, err
 	}
 	if len(res) == 0 {

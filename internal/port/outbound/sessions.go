@@ -2,12 +2,13 @@ package outbound
 
 import (
 	"context"
+	"time"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	"github.com/kidx45/Debter/internal/domain"
 )
 
 type SessionRepository interface {
-	CreateSession(ctx context.Context, arg db.CreateSessionParams) (db.Session, error)
-	GetSessionByRefreshToken(ctx context.Context, refreshToken string) (db.Session, error)
-	UpdateSessionRefreshToken(ctx context.Context, arg db.UpdateSessionRefreshTokenParams) (db.Session, error)
+	CreateSession(ctx context.Context, userID int64, refreshToken, userAgent, clientIp string, expiresAt time.Time) (domain.Session, error)
+	GetSessionByRefreshToken(ctx context.Context, refreshToken string) (domain.Session, error)
+	UpdateSessionRefreshToken(ctx context.Context, id int64, refreshToken string, expiresAt time.Time) (domain.Session, error)
 }

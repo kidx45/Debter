@@ -7,8 +7,7 @@ import (
 	"testing"
 	"time"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
-	"github.com/kidx45/Debter/internal/port/outbound"
+	"github.com/kidx45/Debter/internal/domain"
 	"github.com/kidx45/Debter/internal/service"
 	mockrepository "github.com/kidx45/Debter/internal/test/mock/repository"
 	"github.com/kidx45/Debter/internal/util"
@@ -17,12 +16,12 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func RandomUserWithPassword(t *testing.T) (db.User, string) {
+func RandomUserWithPassword(t *testing.T) (domain.User, string) {
 	password := util.RandomPassword(8, 16)
 	hashedPassword, err := util.HashPassword(password)
 	require.NoError(t, err)
 
-	user := db.User{
+	user := domain.User{
 		ID:             util.RandomNumber(1, 1000),
 		Username:       util.RandomUserName(6, 12),
 		HashedPassword: hashedPassword,
@@ -33,7 +32,7 @@ func RandomUserWithPassword(t *testing.T) (db.User, string) {
 	return user, password
 }
 
-func NewTestAuthService(t *testing.T, userRepo outbound.UserRepository, sessionRepo outbound.SessionRepository, maker token.TokenMaker) *service.AuthService {
+func NewTestAuthService(t *testing.T, userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository, maker token.TokenMaker) *service.AuthService {
 	return service.NewAuthService(userRepo, sessionRepo, maker, time.Minute, 24*time.Hour)
 }
 
@@ -63,18 +62,18 @@ func TestLoginUser(t *testing.T) {
 			},
 			buildStubs: func(userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository) {
 				userRepo.EXPECT().GetUserByUsername(gomock.Any(), gomock.Eq(user.Username)).Return(user, nil)
-				sessionRepo.EXPECT().CreateSession(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, arg db.CreateSessionParams) (db.Session, error) {
-					require.Equal(t, user.ID, arg.UserID)
-					require.NotEmpty(t, arg.RefreshToken)
-					require.True(t, arg.ExpiresAt.After(time.Now()))
-					return db.Session{
+				sessionRepo.EXPECT().CreateSession(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, userID int64, refreshToken, userAgent, clientIp string, expiresAt time.Time) (domain.Session, error) {
+					require.Equal(t, user.ID, userID)
+					require.NotEmpty(t, refreshToken)
+					require.True(t, expiresAt.After(time.Now()))
+					return domain.Session{
 						ID:           util.RandomNumber(1, 1000),
-						UserID:       arg.UserID,
-						RefreshToken: arg.RefreshToken,
-						UserAgent:    arg.UserAgent,
-						ClientIp:     arg.ClientIp,
+						UserID:       userID,
+						RefreshToken: refreshToken,
+						UserAgent:    userAgent,
+						ClientIp:     clientIp,
 						IsBlocked:    false,
-						ExpiresAt:    arg.ExpiresAt,
+						ExpiresAt:    expiresAt,
 						CreatedAt:    time.Now(),
 					}, nil
 				})
@@ -117,7 +116,7 @@ func TestLoginUser(t *testing.T) {
 				Password: password,
 			},
 			buildStubs: func(userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository) {
-				userRepo.EXPECT().GetUserByUsername(gomock.Any(), gomock.Any()).Return(db.User{}, sql.ErrNoRows)
+				userRepo.EXPECT().GetUserByUsername(gomock.Any(), gomock.Any()).Return(domain.User{}, sql.ErrNoRows)
 			},
 			checkResponse: func(t *testing.T, res *service.LoginUserResult, err error) {
 				require.Error(t, err)
@@ -146,8 +145,8 @@ func TestRenewAccessToken(t *testing.T) {
 	user, _ := RandomUserWithPassword(t)
 	maker := NewTestTokenMaker(t)
 
-	randomSession := func() db.Session {
-		return db.Session{
+	randomSession := func() domain.Session {
+		return domain.Session{
 			ID:           util.RandomNumber(1, 1000),
 			UserID:       user.ID,
 			RefreshToken: util.RandomString(32),
@@ -161,31 +160,31 @@ func TestRenewAccessToken(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		buildStubs    func(session *db.Session, userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository)
-		checkResponse func(t *testing.T, session *db.Session, res *service.RenewAccessTokenResult, err error)
+		buildStubs    func(session *domain.Session, userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository)
+		checkResponse func(t *testing.T, session *domain.Session, res *service.RenewAccessTokenResult, err error)
 	}{
 		{
 			name: "OK",
-			buildStubs: func(session *db.Session, userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository) {
+			buildStubs: func(session *domain.Session, userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository) {
 				sessionRepo.EXPECT().GetSessionByRefreshToken(gomock.Any(), gomock.Eq(session.RefreshToken)).Return(*session, nil)
 				userRepo.EXPECT().GetUser(gomock.Any(), gomock.Eq(user.ID)).Return(user, nil)
-				sessionRepo.EXPECT().UpdateSessionRefreshToken(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, arg db.UpdateSessionRefreshTokenParams) (db.Session, error) {
-					require.Equal(t, session.ID, arg.ID)
-					require.NotEqual(t, session.RefreshToken, arg.RefreshToken)
-					require.True(t, arg.ExpiresAt.After(time.Now()))
-					return db.Session{
+				sessionRepo.EXPECT().UpdateSessionRefreshToken(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, id int64, refreshToken string, expiresAt time.Time) (domain.Session, error) {
+					require.Equal(t, session.ID, id)
+					require.NotEqual(t, session.RefreshToken, refreshToken)
+					require.True(t, expiresAt.After(time.Now()))
+					return domain.Session{
 						ID:           session.ID,
 						UserID:       session.UserID,
-						RefreshToken: arg.RefreshToken,
+						RefreshToken: refreshToken,
 						UserAgent:    session.UserAgent,
 						ClientIp:     session.ClientIp,
 						IsBlocked:    false,
-						ExpiresAt:    arg.ExpiresAt,
+						ExpiresAt:    expiresAt,
 						CreatedAt:    session.CreatedAt,
 					}, nil
 				})
 			},
-			checkResponse: func(t *testing.T, session *db.Session, res *service.RenewAccessTokenResult, err error) {
+			checkResponse: func(t *testing.T, session *domain.Session, res *service.RenewAccessTokenResult, err error) {
 				require.NoError(t, err)
 				require.NotEmpty(t, res.AccessToken)
 				require.NotEqual(t, session.RefreshToken, res.RefreshToken)
@@ -195,10 +194,10 @@ func TestRenewAccessToken(t *testing.T) {
 		},
 		{
 			name: "InvalidSession",
-			buildStubs: func(session *db.Session, userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository) {
-				sessionRepo.EXPECT().GetSessionByRefreshToken(gomock.Any(), gomock.Eq(session.RefreshToken)).Return(db.Session{}, sql.ErrNoRows)
+			buildStubs: func(session *domain.Session, userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository) {
+				sessionRepo.EXPECT().GetSessionByRefreshToken(gomock.Any(), gomock.Eq(session.RefreshToken)).Return(domain.Session{}, sql.ErrNoRows)
 			},
-			checkResponse: func(t *testing.T, session *db.Session, res *service.RenewAccessTokenResult, err error) {
+			checkResponse: func(t *testing.T, session *domain.Session, res *service.RenewAccessTokenResult, err error) {
 				require.Error(t, err)
 				require.Equal(t, "invalid refresh token", err.Error())
 				require.Nil(t, res)
@@ -206,11 +205,11 @@ func TestRenewAccessToken(t *testing.T) {
 		},
 		{
 			name: "BlockedSession",
-			buildStubs: func(session *db.Session, userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository) {
+			buildStubs: func(session *domain.Session, userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository) {
 				session.IsBlocked = true
 				sessionRepo.EXPECT().GetSessionByRefreshToken(gomock.Any(), gomock.Eq(session.RefreshToken)).Return(*session, nil)
 			},
-			checkResponse: func(t *testing.T, session *db.Session, res *service.RenewAccessTokenResult, err error) {
+			checkResponse: func(t *testing.T, session *domain.Session, res *service.RenewAccessTokenResult, err error) {
 				require.Error(t, err)
 				require.Equal(t, "blocked session", err.Error())
 				require.Nil(t, res)
@@ -218,11 +217,11 @@ func TestRenewAccessToken(t *testing.T) {
 		},
 		{
 			name: "ExpiredSession",
-			buildStubs: func(session *db.Session, userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository) {
+			buildStubs: func(session *domain.Session, userRepo *mockrepository.MockUserRepository, sessionRepo *mockrepository.MockSessionRepository) {
 				session.ExpiresAt = time.Now().Add(-time.Hour)
 				sessionRepo.EXPECT().GetSessionByRefreshToken(gomock.Any(), gomock.Eq(session.RefreshToken)).Return(*session, nil)
 			},
-			checkResponse: func(t *testing.T, session *db.Session, res *service.RenewAccessTokenResult, err error) {
+			checkResponse: func(t *testing.T, session *domain.Session, res *service.RenewAccessTokenResult, err error) {
 				require.Error(t, err)
 				require.Equal(t, "expired session", err.Error())
 				require.Nil(t, res)

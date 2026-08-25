@@ -12,8 +12,9 @@ package mockrepository
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	domain "github.com/kidx45/Debter/internal/domain"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,46 +43,46 @@ func (m *MockEntryRepository) EXPECT() *MockEntryRepositoryMockRecorder {
 }
 
 // FilterEntriesByDate mocks base method.
-func (m *MockEntryRepository) FilterEntriesByDate(ctx context.Context, arg db.FilterEntriesByDateParams) ([]db.Entry, error) {
+func (m *MockEntryRepository) FilterEntriesByDate(ctx context.Context, accountID, userID int64, from, to time.Time) ([]domain.Entry, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FilterEntriesByDate", ctx, arg)
-	ret0, _ := ret[0].([]db.Entry)
+	ret := m.ctrl.Call(m, "FilterEntriesByDate", ctx, accountID, userID, from, to)
+	ret0, _ := ret[0].([]domain.Entry)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // FilterEntriesByDate indicates an expected call of FilterEntriesByDate.
-func (mr *MockEntryRepositoryMockRecorder) FilterEntriesByDate(ctx, arg any) *gomock.Call {
+func (mr *MockEntryRepositoryMockRecorder) FilterEntriesByDate(ctx, accountID, userID, from, to any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterEntriesByDate", reflect.TypeOf((*MockEntryRepository)(nil).FilterEntriesByDate), ctx, arg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterEntriesByDate", reflect.TypeOf((*MockEntryRepository)(nil).FilterEntriesByDate), ctx, accountID, userID, from, to)
 }
 
 // GetEntriesByAccountId mocks base method.
-func (m *MockEntryRepository) GetEntriesByAccountId(ctx context.Context, arg db.GetEntriesByAccountIdParams) ([]db.Entry, error) {
+func (m *MockEntryRepository) GetEntriesByAccountId(ctx context.Context, accountID, userID int64) ([]domain.Entry, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEntriesByAccountId", ctx, arg)
-	ret0, _ := ret[0].([]db.Entry)
+	ret := m.ctrl.Call(m, "GetEntriesByAccountId", ctx, accountID, userID)
+	ret0, _ := ret[0].([]domain.Entry)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetEntriesByAccountId indicates an expected call of GetEntriesByAccountId.
-func (mr *MockEntryRepositoryMockRecorder) GetEntriesByAccountId(ctx, arg any) *gomock.Call {
+func (mr *MockEntryRepositoryMockRecorder) GetEntriesByAccountId(ctx, accountID, userID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEntriesByAccountId", reflect.TypeOf((*MockEntryRepository)(nil).GetEntriesByAccountId), ctx, arg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEntriesByAccountId", reflect.TypeOf((*MockEntryRepository)(nil).GetEntriesByAccountId), ctx, accountID, userID)
 }
 
 // GetEntriesByCategoryAndType mocks base method.
-func (m *MockEntryRepository) GetEntriesByCategoryAndType(ctx context.Context, arg db.GetEntriesByCategoryAndTypeParams) ([]db.GetEntriesByCategoryAndTypeRow, error) {
+func (m *MockEntryRepository) GetEntriesByCategoryAndType(ctx context.Context, accountID, userID int64, entryType string) ([]domain.CategorySummary, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEntriesByCategoryAndType", ctx, arg)
-	ret0, _ := ret[0].([]db.GetEntriesByCategoryAndTypeRow)
+	ret := m.ctrl.Call(m, "GetEntriesByCategoryAndType", ctx, accountID, userID, entryType)
+	ret0, _ := ret[0].([]domain.CategorySummary)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetEntriesByCategoryAndType indicates an expected call of GetEntriesByCategoryAndType.
-func (mr *MockEntryRepositoryMockRecorder) GetEntriesByCategoryAndType(ctx, arg any) *gomock.Call {
+func (mr *MockEntryRepositoryMockRecorder) GetEntriesByCategoryAndType(ctx, accountID, userID, entryType any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEntriesByCategoryAndType", reflect.TypeOf((*MockEntryRepository)(nil).GetEntriesByCategoryAndType), ctx, arg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEntriesByCategoryAndType", reflect.TypeOf((*MockEntryRepository)(nil).GetEntriesByCategoryAndType), ctx, accountID, userID, entryType)
 }
