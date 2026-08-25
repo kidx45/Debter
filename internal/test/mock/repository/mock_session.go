@@ -12,8 +12,9 @@ package mockrepository
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	domain "github.com/kidx45/Debter/internal/domain"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,25 +43,25 @@ func (m *MockSessionRepository) EXPECT() *MockSessionRepositoryMockRecorder {
 }
 
 // CreateSession mocks base method.
-func (m *MockSessionRepository) CreateSession(ctx context.Context, arg db.CreateSessionParams) (db.Session, error) {
+func (m *MockSessionRepository) CreateSession(ctx context.Context, userID int64, refreshToken, userAgent, clientIp string, expiresAt time.Time) (domain.Session, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateSession", ctx, arg)
-	ret0, _ := ret[0].(db.Session)
+	ret := m.ctrl.Call(m, "CreateSession", ctx, userID, refreshToken, userAgent, clientIp, expiresAt)
+	ret0, _ := ret[0].(domain.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateSession indicates an expected call of CreateSession.
-func (mr *MockSessionRepositoryMockRecorder) CreateSession(ctx, arg any) *gomock.Call {
+func (mr *MockSessionRepositoryMockRecorder) CreateSession(ctx, userID, refreshToken, userAgent, clientIp, expiresAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSession", reflect.TypeOf((*MockSessionRepository)(nil).CreateSession), ctx, arg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSession", reflect.TypeOf((*MockSessionRepository)(nil).CreateSession), ctx, userID, refreshToken, userAgent, clientIp, expiresAt)
 }
 
 // GetSessionByRefreshToken mocks base method.
-func (m *MockSessionRepository) GetSessionByRefreshToken(ctx context.Context, refreshToken string) (db.Session, error) {
+func (m *MockSessionRepository) GetSessionByRefreshToken(ctx context.Context, refreshToken string) (domain.Session, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSessionByRefreshToken", ctx, refreshToken)
-	ret0, _ := ret[0].(db.Session)
+	ret0, _ := ret[0].(domain.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -72,16 +73,16 @@ func (mr *MockSessionRepositoryMockRecorder) GetSessionByRefreshToken(ctx, refre
 }
 
 // UpdateSessionRefreshToken mocks base method.
-func (m *MockSessionRepository) UpdateSessionRefreshToken(ctx context.Context, arg db.UpdateSessionRefreshTokenParams) (db.Session, error) {
+func (m *MockSessionRepository) UpdateSessionRefreshToken(ctx context.Context, id int64, refreshToken string, expiresAt time.Time) (domain.Session, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateSessionRefreshToken", ctx, arg)
-	ret0, _ := ret[0].(db.Session)
+	ret := m.ctrl.Call(m, "UpdateSessionRefreshToken", ctx, id, refreshToken, expiresAt)
+	ret0, _ := ret[0].(domain.Session)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateSessionRefreshToken indicates an expected call of UpdateSessionRefreshToken.
-func (mr *MockSessionRepositoryMockRecorder) UpdateSessionRefreshToken(ctx, arg any) *gomock.Call {
+func (mr *MockSessionRepositoryMockRecorder) UpdateSessionRefreshToken(ctx, id, refreshToken, expiresAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSessionRefreshToken", reflect.TypeOf((*MockSessionRepository)(nil).UpdateSessionRefreshToken), ctx, arg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSessionRefreshToken", reflect.TypeOf((*MockSessionRepository)(nil).UpdateSessionRefreshToken), ctx, id, refreshToken, expiresAt)
 }

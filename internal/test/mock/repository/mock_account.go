@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	domain "github.com/kidx45/Debter/internal/domain"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,10 +42,10 @@ func (m *MockAccountRepository) EXPECT() *MockAccountRepositoryMockRecorder {
 }
 
 // GetAccountsByUserId mocks base method.
-func (m *MockAccountRepository) GetAccountsByUserId(ctx context.Context, userID int64) ([]db.Account, error) {
+func (m *MockAccountRepository) GetAccountsByUserId(ctx context.Context, userID int64) ([]domain.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAccountsByUserId", ctx, userID)
-	ret0, _ := ret[0].([]db.Account)
+	ret0, _ := ret[0].([]domain.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

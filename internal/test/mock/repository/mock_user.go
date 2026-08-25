@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	domain "github.com/kidx45/Debter/internal/domain"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,18 +42,18 @@ func (m *MockUserRepository) EXPECT() *MockUserRepositoryMockRecorder {
 }
 
 // CreateUser mocks base method.
-func (m *MockUserRepository) CreateUser(ctx context.Context, arg db.CreateUserParams) (db.User, error) {
+func (m *MockUserRepository) CreateUser(ctx context.Context, username, hashedPassword, fullName, email string) (domain.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUser", ctx, arg)
-	ret0, _ := ret[0].(db.User)
+	ret := m.ctrl.Call(m, "CreateUser", ctx, username, hashedPassword, fullName, email)
+	ret0, _ := ret[0].(domain.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateUser indicates an expected call of CreateUser.
-func (mr *MockUserRepositoryMockRecorder) CreateUser(ctx, arg any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) CreateUser(ctx, username, hashedPassword, fullName, email any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserRepository)(nil).CreateUser), ctx, arg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserRepository)(nil).CreateUser), ctx, username, hashedPassword, fullName, email)
 }
 
 // DeleteUserByUsername mocks base method.
@@ -71,10 +71,10 @@ func (mr *MockUserRepositoryMockRecorder) DeleteUserByUsername(ctx, username any
 }
 
 // GetUser mocks base method.
-func (m *MockUserRepository) GetUser(ctx context.Context, userID int64) (db.User, error) {
+func (m *MockUserRepository) GetUser(ctx context.Context, userID int64) (domain.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUser", ctx, userID)
-	ret0, _ := ret[0].(db.User)
+	ret0, _ := ret[0].(domain.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -86,10 +86,10 @@ func (mr *MockUserRepositoryMockRecorder) GetUser(ctx, userID any) *gomock.Call 
 }
 
 // GetUserByUsername mocks base method.
-func (m *MockUserRepository) GetUserByUsername(ctx context.Context, username string) (db.User, error) {
+func (m *MockUserRepository) GetUserByUsername(ctx context.Context, username string) (domain.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByUsername", ctx, username)
-	ret0, _ := ret[0].(db.User)
+	ret0, _ := ret[0].(domain.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -101,31 +101,31 @@ func (mr *MockUserRepositoryMockRecorder) GetUserByUsername(ctx, username any) *
 }
 
 // UpdateFullNameByUsername mocks base method.
-func (m *MockUserRepository) UpdateFullNameByUsername(ctx context.Context, arg db.UpdateFullNameByUsernameParams) (db.User, error) {
+func (m *MockUserRepository) UpdateFullNameByUsername(ctx context.Context, username, fullName string) (domain.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateFullNameByUsername", ctx, arg)
-	ret0, _ := ret[0].(db.User)
+	ret := m.ctrl.Call(m, "UpdateFullNameByUsername", ctx, username, fullName)
+	ret0, _ := ret[0].(domain.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateFullNameByUsername indicates an expected call of UpdateFullNameByUsername.
-func (mr *MockUserRepositoryMockRecorder) UpdateFullNameByUsername(ctx, arg any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) UpdateFullNameByUsername(ctx, username, fullName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFullNameByUsername", reflect.TypeOf((*MockUserRepository)(nil).UpdateFullNameByUsername), ctx, arg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFullNameByUsername", reflect.TypeOf((*MockUserRepository)(nil).UpdateFullNameByUsername), ctx, username, fullName)
 }
 
 // UpdateUserNameByUsername mocks base method.
-func (m *MockUserRepository) UpdateUserNameByUsername(ctx context.Context, arg db.UpdateUserNameByUsernameParams) (db.User, error) {
+func (m *MockUserRepository) UpdateUserNameByUsername(ctx context.Context, username, newUsername string) (domain.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateUserNameByUsername", ctx, arg)
-	ret0, _ := ret[0].(db.User)
+	ret := m.ctrl.Call(m, "UpdateUserNameByUsername", ctx, username, newUsername)
+	ret0, _ := ret[0].(domain.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateUserNameByUsername indicates an expected call of UpdateUserNameByUsername.
-func (mr *MockUserRepositoryMockRecorder) UpdateUserNameByUsername(ctx, arg any) *gomock.Call {
+func (mr *MockUserRepositoryMockRecorder) UpdateUserNameByUsername(ctx, username, newUsername any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserNameByUsername", reflect.TypeOf((*MockUserRepository)(nil).UpdateUserNameByUsername), ctx, arg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserNameByUsername", reflect.TypeOf((*MockUserRepository)(nil).UpdateUserNameByUsername), ctx, username, newUsername)
 }

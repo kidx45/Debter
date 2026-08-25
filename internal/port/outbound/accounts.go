@@ -3,9 +3,9 @@ package outbound
 import (
 	"context"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	"github.com/kidx45/Debter/internal/domain"
 )
 
 type AccountRepository interface {
-	GetAccountsByUserId(ctx context.Context, userID int64) ([]db.Account, error)
+	GetAccountsByUserId(ctx context.Context, userID int64) ([]domain.Account, error)
 }

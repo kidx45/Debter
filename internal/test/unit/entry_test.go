@@ -5,8 +5,7 @@ import (
 	"testing"
 	"time"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
-	"github.com/kidx45/Debter/internal/port/outbound"
+	"github.com/kidx45/Debter/internal/domain"
 	"github.com/kidx45/Debter/internal/service"
 	mockrepository "github.com/kidx45/Debter/internal/test/mock/repository"
 	"github.com/kidx45/Debter/internal/util"
@@ -14,8 +13,8 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func RandomEntry(t *testing.T) db.Entry {
-	return db.Entry{
+func RandomEntry(t *testing.T) domain.Entry {
+	return domain.Entry{
 		ID:        util.RandomNumber(1, 1000),
 		AccountID: util.RandomNumber(1, 100),
 		Amount:    util.RandomNumber(100, 10000),
@@ -25,39 +24,42 @@ func RandomEntry(t *testing.T) db.Entry {
 	}
 }
 
-func NewTestEntryService(t *testing.T, DB outbound.EntryRepository) *service.EntryService {
-	return service.NewEntryService(DB)
+func NewTestEntryService(t *testing.T, entryRepo *mockrepository.MockEntryRepository) *service.EntryService {
+	return service.NewEntryService(entryRepo)
 }
 
 func TestGetEntriesByAccountId(t *testing.T) {
 	userID := util.RandomNumber(1, 100)
-	entries := []db.Entry{RandomEntry(t), RandomEntry(t)}
+	entries := []domain.Entry{RandomEntry(t), RandomEntry(t)}
 	accountID := entries[0].AccountID
 
 	testCases := []struct {
 		name            string
-		arg             db.GetEntriesByAccountIdParams
+		accountID       int64
+		userID          int64
 		buildRepository func(repository *mockrepository.MockEntryRepository)
-		checkResponse   func(t *testing.T, res []db.Entry, err error)
+		checkResponse   func(t *testing.T, res []domain.Entry, err error)
 	}{
 		{
-			name: "OK",
-			arg:  db.GetEntriesByAccountIdParams{AccountID: accountID, UserID: userID},
+			name:      "OK",
+			accountID: accountID,
+			userID:    userID,
 			buildRepository: func(repository *mockrepository.MockEntryRepository) {
-				repository.EXPECT().GetEntriesByAccountId(gomock.Any(), gomock.Eq(db.GetEntriesByAccountIdParams{AccountID: accountID, UserID: userID})).Return(entries, nil)
+				repository.EXPECT().GetEntriesByAccountId(gomock.Any(), gomock.Eq(accountID), gomock.Eq(userID)).Return(entries, nil)
 			},
-			checkResponse: func(t *testing.T, res []db.Entry, err error) {
+			checkResponse: func(t *testing.T, res []domain.Entry, err error) {
 				require.NoError(t, err)
 				require.Equal(t, entries, res)
 			},
 		},
 		{
-			name: "Empty",
-			arg:  db.GetEntriesByAccountIdParams{AccountID: accountID, UserID: userID},
+			name:      "Empty",
+			accountID: accountID,
+			userID:    userID,
 			buildRepository: func(repository *mockrepository.MockEntryRepository) {
-				repository.EXPECT().GetEntriesByAccountId(gomock.Any(), gomock.Eq(db.GetEntriesByAccountIdParams{AccountID: accountID, UserID: userID})).Return([]db.Entry{}, nil)
+				repository.EXPECT().GetEntriesByAccountId(gomock.Any(), gomock.Eq(accountID), gomock.Eq(userID)).Return([]domain.Entry{}, nil)
 			},
-			checkResponse: func(t *testing.T, res []db.Entry, err error) {
+			checkResponse: func(t *testing.T, res []domain.Entry, err error) {
 				require.Error(t, err)
 				require.Equal(t, "no entries found for this account ID", err.Error())
 				require.Empty(t, res)
@@ -72,8 +74,8 @@ func TestGetEntriesByAccountId(t *testing.T) {
 
 			repository := mockrepository.NewMockEntryRepository(ctrl)
 			testCases[i].buildRepository(repository)
-			EntryService := NewTestEntryService(t, repository)
-			res, err := EntryService.GetEntriesByAccountId(context.Background(), testCases[i].arg)
+			entryService := NewTestEntryService(t, repository)
+			res, err := entryService.GetEntriesByAccountId(context.Background(), testCases[i].accountID, testCases[i].userID)
 			testCases[i].checkResponse(t, res, err)
 		})
 	}
@@ -81,38 +83,44 @@ func TestGetEntriesByAccountId(t *testing.T) {
 
 func TestFilterEntriesByDate(t *testing.T) {
 	userID := util.RandomNumber(1, 100)
-	entries := []db.Entry{RandomEntry(t)}
-	arg := db.FilterEntriesByDateParams{
-		AccountID:   entries[0].AccountID,
-		UserID:      userID,
-		CreatedAt:   time.Now().Add(-24 * time.Hour),
-		CreatedAt_2: time.Now(),
-	}
+	entries := []domain.Entry{RandomEntry(t)}
+	accountID := entries[0].AccountID
+	from := time.Now().Add(-24 * time.Hour)
+	to := time.Now()
 
 	testCases := []struct {
 		name            string
-		arg             db.FilterEntriesByDateParams
+		accountID       int64
+		userID          int64
+		from            time.Time
+		to              time.Time
 		buildRepository func(repository *mockrepository.MockEntryRepository)
-		checkResponse   func(t *testing.T, res []db.Entry, err error)
+		checkResponse   func(t *testing.T, res []domain.Entry, err error)
 	}{
 		{
-			name: "OK",
-			arg:  arg,
+			name:      "OK",
+			accountID: accountID,
+			userID:    userID,
+			from:      from,
+			to:        to,
 			buildRepository: func(repository *mockrepository.MockEntryRepository) {
-				repository.EXPECT().FilterEntriesByDate(gomock.Any(), gomock.Eq(arg)).Return(entries, nil)
+				repository.EXPECT().FilterEntriesByDate(gomock.Any(), gomock.Eq(accountID), gomock.Eq(userID), gomock.Eq(from), gomock.Eq(to)).Return(entries, nil)
 			},
-			checkResponse: func(t *testing.T, res []db.Entry, err error) {
+			checkResponse: func(t *testing.T, res []domain.Entry, err error) {
 				require.NoError(t, err)
 				require.Equal(t, entries, res)
 			},
 		},
 		{
-			name: "Empty",
-			arg:  arg,
+			name:      "Empty",
+			accountID: accountID,
+			userID:    userID,
+			from:      from,
+			to:        to,
 			buildRepository: func(repository *mockrepository.MockEntryRepository) {
-				repository.EXPECT().FilterEntriesByDate(gomock.Any(), gomock.Eq(arg)).Return([]db.Entry{}, nil)
+				repository.EXPECT().FilterEntriesByDate(gomock.Any(), gomock.Eq(accountID), gomock.Eq(userID), gomock.Eq(from), gomock.Eq(to)).Return([]domain.Entry{}, nil)
 			},
-			checkResponse: func(t *testing.T, res []db.Entry, err error) {
+			checkResponse: func(t *testing.T, res []domain.Entry, err error) {
 				require.NoError(t, err)
 				require.Empty(t, res)
 			},
@@ -126,8 +134,8 @@ func TestFilterEntriesByDate(t *testing.T) {
 
 			repository := mockrepository.NewMockEntryRepository(ctrl)
 			testCases[i].buildRepository(repository)
-			EntryService := NewTestEntryService(t, repository)
-			res, err := EntryService.FilterEntriesByDate(context.Background(), testCases[i].arg)
+			entryService := NewTestEntryService(t, repository)
+			res, err := entryService.FilterEntriesByDate(context.Background(), testCases[i].accountID, testCases[i].userID, testCases[i].from, testCases[i].to)
 			testCases[i].checkResponse(t, res, err)
 		})
 	}
@@ -135,40 +143,43 @@ func TestFilterEntriesByDate(t *testing.T) {
 
 func TestGetEntriesByCategoryAndType(t *testing.T) {
 	userID := util.RandomNumber(1, 100)
-	results := []db.GetEntriesByCategoryAndTypeRow{
+	accountID := util.RandomNumber(1, 100)
+	entryType := "expense"
+	results := []domain.CategorySummary{
 		{Category: "food", Total: 5000},
 		{Category: "transport", Total: 2000},
-	}
-	arg := db.GetEntriesByCategoryAndTypeParams{
-		AccountID: util.RandomNumber(1, 100),
-		UserID:    userID,
-		Type:      "expense",
 	}
 
 	testCases := []struct {
 		name            string
-		arg             db.GetEntriesByCategoryAndTypeParams
+		accountID       int64
+		userID          int64
+		entryType       string
 		buildRepository func(repository *mockrepository.MockEntryRepository)
-		checkResponse   func(t *testing.T, res []db.GetEntriesByCategoryAndTypeRow, err error)
+		checkResponse   func(t *testing.T, res []domain.CategorySummary, err error)
 	}{
 		{
-			name: "OK",
-			arg:  arg,
+			name:      "OK",
+			accountID: accountID,
+			userID:    userID,
+			entryType: entryType,
 			buildRepository: func(repository *mockrepository.MockEntryRepository) {
-				repository.EXPECT().GetEntriesByCategoryAndType(gomock.Any(), gomock.Eq(arg)).Return(results, nil)
+				repository.EXPECT().GetEntriesByCategoryAndType(gomock.Any(), gomock.Eq(accountID), gomock.Eq(userID), gomock.Eq(entryType)).Return(results, nil)
 			},
-			checkResponse: func(t *testing.T, res []db.GetEntriesByCategoryAndTypeRow, err error) {
+			checkResponse: func(t *testing.T, res []domain.CategorySummary, err error) {
 				require.NoError(t, err)
 				require.Equal(t, results, res)
 			},
 		},
 		{
-			name: "Empty",
-			arg:  arg,
+			name:      "Empty",
+			accountID: accountID,
+			userID:    userID,
+			entryType: entryType,
 			buildRepository: func(repository *mockrepository.MockEntryRepository) {
-				repository.EXPECT().GetEntriesByCategoryAndType(gomock.Any(), gomock.Eq(arg)).Return([]db.GetEntriesByCategoryAndTypeRow{}, nil)
+				repository.EXPECT().GetEntriesByCategoryAndType(gomock.Any(), gomock.Eq(accountID), gomock.Eq(userID), gomock.Eq(entryType)).Return([]domain.CategorySummary{}, nil)
 			},
-			checkResponse: func(t *testing.T, res []db.GetEntriesByCategoryAndTypeRow, err error) {
+			checkResponse: func(t *testing.T, res []domain.CategorySummary, err error) {
 				require.Error(t, err)
 				require.Equal(t, "no entries found for this account ID", err.Error())
 				require.Empty(t, res)
@@ -183,8 +194,8 @@ func TestGetEntriesByCategoryAndType(t *testing.T) {
 
 			repository := mockrepository.NewMockEntryRepository(ctrl)
 			testCases[i].buildRepository(repository)
-			EntryService := NewTestEntryService(t, repository)
-			res, err := EntryService.GetEntriesByCategoryAndType(context.Background(), testCases[i].arg)
+			entryService := NewTestEntryService(t, repository)
+			res, err := entryService.GetEntriesByCategoryAndType(context.Background(), testCases[i].accountID, testCases[i].userID, testCases[i].entryType)
 			testCases[i].checkResponse(t, res, err)
 		})
 	}

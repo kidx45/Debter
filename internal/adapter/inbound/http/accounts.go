@@ -14,9 +14,9 @@ type AccountAdapter struct {
 	AccountService *service.AccountService
 }
 
-func NewAccountAdapter(AccountService service.AccountService) *AccountAdapter {
+func NewAccountAdapter(accountService service.AccountService) *AccountAdapter {
 	return &AccountAdapter{
-		AccountService: &AccountService,
+		AccountService: &accountService,
 	}
 }
 
@@ -27,8 +27,7 @@ func (a *AccountAdapter) GetAccountsByUserId(ctx *gin.Context) {
 		return
 	}
 
-	userIDStr := ctx.Param("userId")
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	userID, err := strconv.ParseInt(ctx.Param("userId"), 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
 		return

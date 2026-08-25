@@ -2,90 +2,54 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+
+	"github.com/kidx45/Debter/internal/domain"
 	"github.com/kidx45/Debter/internal/port/outbound"
-	"github.com/kidx45/Debter/internal/util"
 )
 
 type UserService struct {
-	DB outbound.UserRepository
+	UserRepo outbound.UserRepository
 }
 
-func NewUserService(DB outbound.UserRepository) *UserService {
+func NewUserService(userRepo outbound.UserRepository) *UserService {
 	return &UserService{
-		DB: DB,
+		UserRepo: userRepo,
 	}
 }
 
-func (u *UserService) CreateUser(ctx context.Context, req db.User) (db.User, error) {
-	// TODO: Fetch users username quickly for the frontend
-	hashedPassword, err := util.HashPassword(req.HashedPassword)
-	if err != nil {
-		return db.User{}, err
-	}
-	arg := db.CreateUserParams{
-		Username:       req.Username,
-		HashedPassword: hashedPassword,
-		FullName:       req.FullName,
-		Email:          req.Email,
-	}
-	res, err := u.DB.CreateUser(ctx, arg)
-	if err != nil {
-		return db.User{}, err
-	}
-	return res, err
+func (u *UserService) CreateUser(ctx context.Context, username, password, fullName, email string) (domain.User, error) {
+	return u.UserRepo.CreateUser(ctx, username, password, fullName, email)
 }
 
-func (u *UserService) GetUserByUsername(ctx context.Context, Username string) (db.User, error) {
-	res, err := u.DB.GetUserByUsername(ctx, Username)
+func (u *UserService) GetUserByUsername(ctx context.Context, username string) (domain.User, error) {
+	user, err := u.UserRepo.GetUserByUsername(ctx, username)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return db.User{}, fmt.Errorf("user not found")
-		}
-		return db.User{}, err
+		return domain.User{}, fmt.Errorf("user not found")
 	}
-	return res, nil
+	return user, nil
 }
 
-func (u *UserService) UpdateFullNameByUsername(ctx context.Context, Username, FullName string) (db.User, error) {
-	arg := db.UpdateFullNameByUsernameParams{
-		Username: Username,
-		FullName: FullName,
-	}
-	res, err := u.DB.UpdateFullNameByUsername(ctx, arg)
+func (u *UserService) UpdateFullNameByUsername(ctx context.Context, username, fullName string) (domain.User, error) {
+	user, err := u.UserRepo.UpdateFullNameByUsername(ctx, username, fullName)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return db.User{}, fmt.Errorf("user not found")
-		}
-		return db.User{}, err
+		return domain.User{}, fmt.Errorf("user not found")
 	}
-	return res, nil
+	return user, nil
 }
 
-func (u *UserService) UpdateUserNameByUsername(ctx context.Context, Username, NewUsername string) (db.User, error) {
-	arg := db.UpdateUserNameByUsernameParams{
-		Username:    Username,
-		NewUsername: NewUsername,
-	}
-	res, err := u.DB.UpdateUserNameByUsername(ctx, arg)
+func (u *UserService) UpdateUserNameByUsername(ctx context.Context, username, newUsername string) (domain.User, error) {
+	user, err := u.UserRepo.UpdateUserNameByUsername(ctx, username, newUsername)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return db.User{}, fmt.Errorf("user not found")
-		}
-		return db.User{}, err
+		return domain.User{}, fmt.Errorf("user not found")
 	}
-	return res, nil
+	return user, nil
 }
 
-func (u *UserService) DeleteUserByUsername(ctx context.Context, Username string) error {
-	err := u.DB.DeleteUserByUsername(ctx, Username)
+func (u *UserService) DeleteUserByUsername(ctx context.Context, username string) error {
+	err := u.UserRepo.DeleteUserByUsername(ctx, username)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("user not found")
-		}
-		return err
+		return fmt.Errorf("user not found")
 	}
 	return nil
 }

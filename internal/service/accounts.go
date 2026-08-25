@@ -4,22 +4,22 @@ import (
 	"context"
 	"fmt"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	"github.com/kidx45/Debter/internal/domain"
 	"github.com/kidx45/Debter/internal/port/outbound"
 )
 
 type AccountService struct {
-	DB outbound.AccountRepository
+	AccountRepo outbound.AccountRepository
 }
 
-func NewAccountService(DB outbound.AccountRepository) *AccountService {
+func NewAccountService(accountRepo outbound.AccountRepository) *AccountService {
 	return &AccountService{
-		DB: DB,
+		AccountRepo: accountRepo,
 	}
 }
 
-func (s *AccountService) GetAccountsByUserId(ctx context.Context, userID int64) ([]db.Account, error) {
-	res, err := s.DB.GetAccountsByUserId(ctx, userID)
+func (s *AccountService) GetAccountsByUserId(ctx context.Context, userID int64) ([]domain.Account, error) {
+	res, err := s.AccountRepo.GetAccountsByUserId(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

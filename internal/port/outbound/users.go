@@ -3,15 +3,14 @@ package outbound
 import (
 	"context"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	"github.com/kidx45/Debter/internal/domain"
 )
 
 type UserRepository interface {
-	CreateUser(ctx context.Context, arg db.CreateUserParams) (db.User, error)
+	CreateUser(ctx context.Context, username, hashedPassword, fullName, email string) (domain.User, error)
 	DeleteUserByUsername(ctx context.Context, username string) error
-	GetUser(ctx context.Context, userID int64) (db.User, error)
-	GetUserByUsername(ctx context.Context, username string) (db.User, error)
-	UpdateFullNameByUsername(ctx context.Context, arg db.UpdateFullNameByUsernameParams) (db.User, error)
-	UpdateUserNameByUsername(ctx context.Context, arg db.UpdateUserNameByUsernameParams) (db.User, error)
+	GetUser(ctx context.Context, userID int64) (domain.User, error)
+	GetUserByUsername(ctx context.Context, username string) (domain.User, error)
+	UpdateFullNameByUsername(ctx context.Context, username, fullName string) (domain.User, error)
+	UpdateUserNameByUsername(ctx context.Context, username, newUsername string) (domain.User, error)
 }
-

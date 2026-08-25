@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	"github.com/kidx45/Debter/internal/domain"
 	"github.com/kidx45/Debter/internal/service"
 	"github.com/lib/pq"
 )
@@ -15,9 +15,9 @@ type UserAdapter struct {
 	UserService *service.UserService
 }
 
-func NewUserAdapter(UserService service.UserService) *UserAdapter {
+func NewUserAdapter(userService service.UserService) *UserAdapter {
 	return &UserAdapter{
-		UserService: &UserService,
+		UserService: &userService,
 	}
 }
 
@@ -29,7 +29,7 @@ type userResponse struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 
-func newUserResponse(user db.User) userResponse {
+func newUserResponse(user domain.User) userResponse {
 	return userResponse{
 		ID:        user.ID,
 		Username:  user.Username,
@@ -53,14 +53,7 @@ func (a *UserAdapter) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	user := db.User{
-		Username:       req.Username,
-		HashedPassword: req.Password,
-		FullName:       req.FullName,
-		Email:          req.Email,
-	}
-
-	res, err := a.UserService.CreateUser(ctx.Request.Context(), user)
+	res, err := a.UserService.CreateUser(ctx.Request.Context(), req.Username, req.Password, req.FullName, req.Email)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Code.Name() {

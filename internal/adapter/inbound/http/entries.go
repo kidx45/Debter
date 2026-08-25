@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kidx45/Debter/internal/adapter/inbound/middleware"
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
 	"github.com/kidx45/Debter/internal/service"
 )
 
@@ -16,9 +15,9 @@ type EntryAdapter struct {
 	EntryService *service.EntryService
 }
 
-func NewEntryAdapter(EntryService service.EntryService) *EntryAdapter {
+func NewEntryAdapter(entryService service.EntryService) *EntryAdapter {
 	return &EntryAdapter{
-		EntryService: &EntryService,
+		EntryService: &entryService,
 	}
 }
 
@@ -29,19 +28,13 @@ func (a *EntryAdapter) GetEntriesByAccountId(ctx *gin.Context) {
 		return
 	}
 
-	accountIDStr := ctx.Param("accountId")
-	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
+	accountID, err := strconv.ParseInt(ctx.Param("accountId"), 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
 		return
 	}
 
-	arg := db.GetEntriesByAccountIdParams{
-		AccountID: accountID,
-		UserID:    payload.UserID,
-	}
-
-	res, err := a.EntryService.GetEntriesByAccountId(ctx.Request.Context(), arg)
+	res, err := a.EntryService.GetEntriesByAccountId(ctx.Request.Context(), accountID, payload.UserID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -61,36 +54,25 @@ func (a *EntryAdapter) FilterEntriesByDate(ctx *gin.Context) {
 		return
 	}
 
-	accountIDStr := ctx.Param("accountId")
-	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
+	accountID, err := strconv.ParseInt(ctx.Param("accountId"), 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
 		return
 	}
 
-	fromStr := ctx.Query("from")
-	toStr := ctx.Query("to")
-
-	from, err := time.Parse(time.RFC3339, fromStr)
+	from, err := time.Parse(time.RFC3339, ctx.Query("from"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid 'from' date, use RFC3339 format"})
 		return
 	}
 
-	to, err := time.Parse(time.RFC3339, toStr)
+	to, err := time.Parse(time.RFC3339, ctx.Query("to"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid 'to' date, use RFC3339 format"})
 		return
 	}
 
-	arg := db.FilterEntriesByDateParams{
-		AccountID:   accountID,
-		UserID:      payload.UserID,
-		CreatedAt:   from,
-		CreatedAt_2: to,
-	}
-
-	res, err := a.EntryService.FilterEntriesByDate(ctx.Request.Context(), arg)
+	res, err := a.EntryService.FilterEntriesByDate(ctx.Request.Context(), accountID, payload.UserID, from, to)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -106,8 +88,7 @@ func (a *EntryAdapter) GetEntriesByCategoryAndType(ctx *gin.Context) {
 		return
 	}
 
-	accountIDStr := ctx.Param("accountId")
-	accountID, err := strconv.ParseInt(accountIDStr, 10, 64)
+	accountID, err := strconv.ParseInt(ctx.Param("accountId"), 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid account ID"})
 		return
@@ -119,13 +100,7 @@ func (a *EntryAdapter) GetEntriesByCategoryAndType(ctx *gin.Context) {
 		return
 	}
 
-	arg := db.GetEntriesByCategoryAndTypeParams{
-		AccountID: accountID,
-		UserID:    payload.UserID,
-		Type:      entryType,
-	}
-
-	res, err := a.EntryService.GetEntriesByCategoryAndType(ctx.Request.Context(), arg)
+	res, err := a.EntryService.GetEntriesByCategoryAndType(ctx.Request.Context(), accountID, payload.UserID, entryType)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})

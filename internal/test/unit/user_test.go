@@ -2,13 +2,11 @@ package unit
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
-	"github.com/kidx45/Debter/internal/port/outbound"
+	"github.com/kidx45/Debter/internal/domain"
 	"github.com/kidx45/Debter/internal/service"
 	mockrepository "github.com/kidx45/Debter/internal/test/mock/repository"
 	"github.com/kidx45/Debter/internal/util"
@@ -16,8 +14,8 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func RandomUser(t *testing.T) db.User {
-	return db.User{
+func RandomUser(t *testing.T) domain.User {
+	return domain.User{
 		ID:             util.RandomNumber(1, 1000),
 		FullName:       util.RandomFullName(6, 12),
 		Username:       util.RandomUserName(6, 12),
@@ -27,46 +25,52 @@ func RandomUser(t *testing.T) db.User {
 	}
 }
 
-func NewTestUserService(t *testing.T, DB outbound.UserRepository) *service.UserService {
-	return service.NewUserService(DB)
+func NewTestUserService(t *testing.T, userRepo *mockrepository.MockUserRepository) *service.UserService {
+	return service.NewUserService(userRepo)
 }
 
 func TestCreateUser(t *testing.T) {
 	user := RandomUser(t)
 	testCases := []struct {
 		name            string
-		req             db.User
+		username        string
+		password        string
+		fullName        string
+		email           string
 		buildRepository func(repository *mockrepository.MockUserRepository)
-		checkResponse   func(t *testing.T, res db.User, err error)
+		checkResponse   func(t *testing.T, res domain.User, err error)
 	}{
 		{
-			name: "OK",
-			req:  user,
+			name:     "OK",
+			username: user.Username,
+			password: user.HashedPassword,
+			fullName: user.FullName,
+			email:    user.Email,
 			buildRepository: func(repository *mockrepository.MockUserRepository) {
-				repository.EXPECT().CreateUser(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, arg db.CreateUserParams) (db.User, error) {
-					require.NoError(t, util.CheckPassword(user.HashedPassword, arg.HashedPassword))
-					require.NotEqual(t, user.HashedPassword, arg.HashedPassword)
-					require.Equal(t, user.Username, arg.Username)
-					require.Equal(t, user.FullName, arg.FullName)
-					require.Equal(t, user.Email, arg.Email)
+				repository.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, username, password, fullName, email string) (domain.User, error) {
+					require.Equal(t, user.Username, username)
+					require.Equal(t, user.FullName, fullName)
+					require.Equal(t, user.Email, email)
 					return user, nil
 				})
 			},
-			checkResponse: func(t *testing.T, res db.User, err error) {
+			checkResponse: func(t *testing.T, res domain.User, err error) {
 				require.NoError(t, err)
 				require.Equal(t, user, res)
 			},
 		},
 		{
-			name: "Failed",
-			req:  user,
+			name:     "Failed",
+			username: user.Username,
+			password: user.HashedPassword,
+			fullName: user.FullName,
+			email:    user.Email,
 			buildRepository: func(repository *mockrepository.MockUserRepository) {
-				repository.EXPECT().CreateUser(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, arg db.CreateUserParams) (db.User, error) {
-					require.NoError(t, util.CheckPassword(user.HashedPassword, arg.HashedPassword))
-					return db.User{}, fmt.Errorf("duplicate key")
+				repository.EXPECT().CreateUser(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, username, password, fullName, email string) (domain.User, error) {
+					return domain.User{}, fmt.Errorf("duplicate key")
 				})
 			},
-			checkResponse: func(t *testing.T, res db.User, err error) {
+			checkResponse: func(t *testing.T, res domain.User, err error) {
 				require.Error(t, err)
 				require.Empty(t, res)
 			},
@@ -80,8 +84,8 @@ func TestCreateUser(t *testing.T) {
 
 			repository := mockrepository.NewMockUserRepository(ctrl)
 			testCases[i].buildRepository(repository)
-			UserService := NewTestUserService(t, repository)
-			res, err := UserService.CreateUser(context.Background(), testCases[i].req)
+			userService := NewTestUserService(t, repository)
+			res, err := userService.CreateUser(context.Background(), testCases[i].username, testCases[i].password, testCases[i].fullName, testCases[i].email)
 			testCases[i].checkResponse(t, res, err)
 		})
 	}
@@ -93,7 +97,7 @@ func TestGetUserByUsername(t *testing.T) {
 		name            string
 		username        string
 		buildRepository func(repository *mockrepository.MockUserRepository)
-		checkResponse   func(t *testing.T, res db.User, err error)
+		checkResponse   func(t *testing.T, res domain.User, err error)
 	}{
 		{
 			name:     "OK",
@@ -101,7 +105,7 @@ func TestGetUserByUsername(t *testing.T) {
 			buildRepository: func(repository *mockrepository.MockUserRepository) {
 				repository.EXPECT().GetUserByUsername(gomock.Any(), gomock.Eq(user.Username)).Return(user, nil)
 			},
-			checkResponse: func(t *testing.T, res db.User, err error) {
+			checkResponse: func(t *testing.T, res domain.User, err error) {
 				require.NoError(t, err)
 				require.Equal(t, user, res)
 			},
@@ -110,9 +114,9 @@ func TestGetUserByUsername(t *testing.T) {
 			name:     "NotFound",
 			username: user.Username,
 			buildRepository: func(repository *mockrepository.MockUserRepository) {
-				repository.EXPECT().GetUserByUsername(gomock.Any(), gomock.Eq(user.Username)).Return(db.User{}, sql.ErrNoRows)
+				repository.EXPECT().GetUserByUsername(gomock.Any(), gomock.Eq(user.Username)).Return(domain.User{}, fmt.Errorf("not found"))
 			},
-			checkResponse: func(t *testing.T, res db.User, err error) {
+			checkResponse: func(t *testing.T, res domain.User, err error) {
 				require.Error(t, err)
 				require.Equal(t, "user not found", err.Error())
 				require.Empty(t, res)
@@ -127,8 +131,8 @@ func TestGetUserByUsername(t *testing.T) {
 
 			repository := mockrepository.NewMockUserRepository(ctrl)
 			testCases[i].buildRepository(repository)
-			UserService := NewTestUserService(t, repository)
-			res, err := UserService.GetUserByUsername(context.Background(), testCases[i].username)
+			userService := NewTestUserService(t, repository)
+			res, err := userService.GetUserByUsername(context.Background(), testCases[i].username)
 			testCases[i].checkResponse(t, res, err)
 		})
 	}
@@ -145,20 +149,16 @@ func TestUpdateFullNameByUsername(t *testing.T) {
 		username        string
 		fullName        string
 		buildRepository func(repository *mockrepository.MockUserRepository)
-		checkResponse   func(t *testing.T, res db.User, err error)
+		checkResponse   func(t *testing.T, res domain.User, err error)
 	}{
 		{
 			name:     "OK",
 			username: user.Username,
 			fullName: newFullName,
 			buildRepository: func(repository *mockrepository.MockUserRepository) {
-				arg := db.UpdateFullNameByUsernameParams{
-					Username: user.Username,
-					FullName: newFullName,
-				}
-				repository.EXPECT().UpdateFullNameByUsername(gomock.Any(), gomock.Eq(arg)).Return(updatedUser, nil)
+				repository.EXPECT().UpdateFullNameByUsername(gomock.Any(), gomock.Eq(user.Username), gomock.Eq(newFullName)).Return(updatedUser, nil)
 			},
-			checkResponse: func(t *testing.T, res db.User, err error) {
+			checkResponse: func(t *testing.T, res domain.User, err error) {
 				require.NoError(t, err)
 				require.Equal(t, updatedUser, res)
 			},
@@ -168,13 +168,9 @@ func TestUpdateFullNameByUsername(t *testing.T) {
 			username: user.Username,
 			fullName: newFullName,
 			buildRepository: func(repository *mockrepository.MockUserRepository) {
-				arg := db.UpdateFullNameByUsernameParams{
-					Username: user.Username,
-					FullName: newFullName,
-				}
-				repository.EXPECT().UpdateFullNameByUsername(gomock.Any(), gomock.Eq(arg)).Return(db.User{}, sql.ErrNoRows)
+				repository.EXPECT().UpdateFullNameByUsername(gomock.Any(), gomock.Eq(user.Username), gomock.Eq(newFullName)).Return(domain.User{}, fmt.Errorf("not found"))
 			},
-			checkResponse: func(t *testing.T, res db.User, err error) {
+			checkResponse: func(t *testing.T, res domain.User, err error) {
 				require.Error(t, err)
 				require.Equal(t, "user not found", err.Error())
 				require.Empty(t, res)
@@ -189,8 +185,8 @@ func TestUpdateFullNameByUsername(t *testing.T) {
 
 			repository := mockrepository.NewMockUserRepository(ctrl)
 			testCases[i].buildRepository(repository)
-			UserService := NewTestUserService(t, repository)
-			res, err := UserService.UpdateFullNameByUsername(context.Background(), testCases[i].username, testCases[i].fullName)
+			userService := NewTestUserService(t, repository)
+			res, err := userService.UpdateFullNameByUsername(context.Background(), testCases[i].username, testCases[i].fullName)
 			testCases[i].checkResponse(t, res, err)
 		})
 	}
@@ -207,20 +203,16 @@ func TestUpdateUserNameByUsername(t *testing.T) {
 		username        string
 		newUsername     string
 		buildRepository func(repository *mockrepository.MockUserRepository)
-		checkResponse   func(t *testing.T, res db.User, err error)
+		checkResponse   func(t *testing.T, res domain.User, err error)
 	}{
 		{
 			name:        "OK",
 			username:    user.Username,
 			newUsername: newUsername,
 			buildRepository: func(repository *mockrepository.MockUserRepository) {
-				arg := db.UpdateUserNameByUsernameParams{
-					Username:    user.Username,
-					NewUsername: newUsername,
-				}
-				repository.EXPECT().UpdateUserNameByUsername(gomock.Any(), gomock.Eq(arg)).Return(updatedUser, nil)
+				repository.EXPECT().UpdateUserNameByUsername(gomock.Any(), gomock.Eq(user.Username), gomock.Eq(newUsername)).Return(updatedUser, nil)
 			},
-			checkResponse: func(t *testing.T, res db.User, err error) {
+			checkResponse: func(t *testing.T, res domain.User, err error) {
 				require.NoError(t, err)
 				require.Equal(t, updatedUser, res)
 			},
@@ -230,13 +222,9 @@ func TestUpdateUserNameByUsername(t *testing.T) {
 			username:    user.Username,
 			newUsername: newUsername,
 			buildRepository: func(repository *mockrepository.MockUserRepository) {
-				arg := db.UpdateUserNameByUsernameParams{
-					Username:    user.Username,
-					NewUsername: newUsername,
-				}
-				repository.EXPECT().UpdateUserNameByUsername(gomock.Any(), gomock.Eq(arg)).Return(db.User{}, sql.ErrNoRows)
+				repository.EXPECT().UpdateUserNameByUsername(gomock.Any(), gomock.Eq(user.Username), gomock.Eq(newUsername)).Return(domain.User{}, fmt.Errorf("not found"))
 			},
-			checkResponse: func(t *testing.T, res db.User, err error) {
+			checkResponse: func(t *testing.T, res domain.User, err error) {
 				require.Error(t, err)
 				require.Equal(t, "user not found", err.Error())
 				require.Empty(t, res)
@@ -251,8 +239,8 @@ func TestUpdateUserNameByUsername(t *testing.T) {
 
 			repository := mockrepository.NewMockUserRepository(ctrl)
 			testCases[i].buildRepository(repository)
-			UserService := NewTestUserService(t, repository)
-			res, err := UserService.UpdateUserNameByUsername(context.Background(), testCases[i].username, testCases[i].newUsername)
+			userService := NewTestUserService(t, repository)
+			res, err := userService.UpdateUserNameByUsername(context.Background(), testCases[i].username, testCases[i].newUsername)
 			testCases[i].checkResponse(t, res, err)
 		})
 	}
@@ -280,7 +268,7 @@ func TestDeleteUserByUsername(t *testing.T) {
 			name:     "NotFound",
 			username: user.Username,
 			buildRepository: func(repository *mockrepository.MockUserRepository) {
-				repository.EXPECT().DeleteUserByUsername(gomock.Any(), gomock.Eq(user.Username)).Return(sql.ErrNoRows)
+				repository.EXPECT().DeleteUserByUsername(gomock.Any(), gomock.Eq(user.Username)).Return(fmt.Errorf("not found"))
 			},
 			checkResponse: func(t *testing.T, err error) {
 				require.Error(t, err)
@@ -296,8 +284,8 @@ func TestDeleteUserByUsername(t *testing.T) {
 
 			repository := mockrepository.NewMockUserRepository(ctrl)
 			testCases[i].buildRepository(repository)
-			UserService := NewTestUserService(t, repository)
-			err := UserService.DeleteUserByUsername(context.Background(), testCases[i].username)
+			userService := NewTestUserService(t, repository)
+			err := userService.DeleteUserByUsername(context.Background(), testCases[i].username)
 			testCases[i].checkResponse(t, err)
 		})
 	}

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	"github.com/kidx45/Debter/internal/domain"
 	"github.com/kidx45/Debter/internal/port/outbound"
 	"github.com/kidx45/Debter/internal/util"
 	"github.com/kidx45/Debter/internal/util/token"
@@ -20,8 +20,8 @@ type LoginUserRequest struct {
 }
 
 type LoginUserResult struct {
-	User                  db.User
-	Session               db.Session
+	User                  domain.User
+	Session               domain.Session
 	AccessToken           string
 	RefreshToken          string
 	AccessTokenExpiresAt  time.Time
@@ -43,13 +43,13 @@ type AuthService struct {
 	RefreshTokenDuration time.Duration
 }
 
-func NewAuthService(UserRepo outbound.UserRepository, SessionRepo outbound.SessionRepository, TokenMaker token.TokenMaker, AccessTokenDuration, RefreshTokenDuration time.Duration) *AuthService {
+func NewAuthService(userRepo outbound.UserRepository, sessionRepo outbound.SessionRepository, tokenMaker token.TokenMaker, accessTokenDuration, refreshTokenDuration time.Duration) *AuthService {
 	return &AuthService{
-		UserRepo:             UserRepo,
-		SessionRepo:          SessionRepo,
-		TokenMaker:           TokenMaker,
-		AccessTokenDuration:  AccessTokenDuration,
-		RefreshTokenDuration: RefreshTokenDuration,
+		UserRepo:             userRepo,
+		SessionRepo:          sessionRepo,
+		TokenMaker:           tokenMaker,
+		AccessTokenDuration:  accessTokenDuration,
+		RefreshTokenDuration: refreshTokenDuration,
 	}
 }
 
@@ -71,13 +71,8 @@ func (s *AuthService) LoginUser(ctx context.Context, req LoginUserRequest) (*Log
 	}
 
 	refreshToken := util.RandomString(32)
-	session, err := s.SessionRepo.CreateSession(ctx, db.CreateSessionParams{
-		UserID:       user.ID,
-		RefreshToken: refreshToken,
-		UserAgent:    req.UserAgent,
-		ClientIp:     req.ClientIp,
-		ExpiresAt:    time.Now().Add(s.RefreshTokenDuration),
-	})
+	expiresAt := time.Now().Add(s.RefreshTokenDuration)
+	session, err := s.SessionRepo.CreateSession(ctx, user.ID, refreshToken, req.UserAgent, req.ClientIp, expiresAt)
 	if err != nil {
 		return nil, err
 	}
@@ -117,11 +112,7 @@ func (s *AuthService) RenewAccessToken(ctx context.Context, refreshToken string)
 
 	newRefreshToken := util.RandomString(32)
 	newExpiresAt := time.Now().Add(s.RefreshTokenDuration)
-	updatedSession, err := s.SessionRepo.UpdateSessionRefreshToken(ctx, db.UpdateSessionRefreshTokenParams{
-		ID:           session.ID,
-		RefreshToken: newRefreshToken,
-		ExpiresAt:    newExpiresAt,
-	})
+	updatedSession, err := s.SessionRepo.UpdateSessionRefreshToken(ctx, session.ID, newRefreshToken, newExpiresAt)
 	if err != nil {
 		return nil, err
 	}
