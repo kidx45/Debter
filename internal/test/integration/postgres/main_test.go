@@ -31,9 +31,9 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func TxQueriesTest (t *testing.T) *db.Queries {
-	tx, err := testDB.BeginTx(context.Background(),nil)
-	require.NoError(t,err)
+func TxQueriesTest(t *testing.T) *db.Queries {
+	tx, err := testDB.BeginTx(context.Background(), nil)
+	require.NoError(t, err)
 	t.Cleanup(func() {
 		tx.Rollback()
 	})

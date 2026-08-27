@@ -1,5 +1,9 @@
-*.env
+# Environment files (secrets — never commit)
+.env
+.env.*
+
 .vscode
 .agents
 .cph
 *.py
+skills-lock.json
