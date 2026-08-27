@@ -1,0 +1,45 @@
+# =============================================================================
+# Docker Compose — Development (Neon Local)
+# =============================================================================
+# Uses the Neon Local Docker image to run a local Neon-compatible database.
+# This mirrors the Neon cloud environment locally, so dev behavior matches
+# production as closely as possible.
+#
+# The Neon local image provides a PostgreSQL-compatible endpoint that
+# supports Neon-specific features like branching (configured via
+# NEON_API_KEY, NEON_PROJECT_ID, and BRANCH_ID in .env.dev.neon).
+#
+# Usage: docker compose -f docker-compose.dev.neon.yaml up --build
+# =============================================================================
+
+services:
+  # Neon local database — PostgreSQL-compatible with Neon features
+  db:
+    image: neondatabase/neon_local:latest
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env.dev.neon
+    healthcheck:
+      # pg_isready verifies the database accepts connections before
+      # the API container starts. Using neondb_owner as the user
+      # matches the Neon local default configuration.
+      test: ["CMD-SHELL", "pg_isready -U neondb_owner -d debter"]
+      interval: 3s
+      timeout: 15s
+      retries: 5
+
+  # API service — connects to the local Neon database
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.dev.neon
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["./start.sh"]
+    command: ["./main"]

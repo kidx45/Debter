@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
 	httpAdapter "github.com/kidx45/Debter/internal/adapter/inbound/http"
 	outboundAdapter "github.com/kidx45/Debter/internal/adapter/outbound"
+	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
 	"github.com/kidx45/Debter/internal/domain"
 	"github.com/kidx45/Debter/internal/service"
 	"github.com/kidx45/Debter/internal/util/token"

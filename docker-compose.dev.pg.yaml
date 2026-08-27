@@ -1,0 +1,45 @@
+# =============================================================================
+# Docker Compose — Development (Vanilla PostgreSQL)
+# =============================================================================
+# Fallback development setup using standard PostgreSQL 18-alpine.
+# Use this if Neon Local is not needed or causes issues.
+#
+# Usage: docker compose -f docker-compose.dev.pg.yaml up --build
+# =============================================================================
+
+services:
+  # Standard PostgreSQL database
+  db:
+    image: postgres:18-alpine
+    # Postgres config is set via environment variables (not env_file)
+    # because these are Postgres-specific, not app-specific.
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: debter
+    ports:
+      - "5432:5432"
+    healthcheck:
+      # pg_isready verifies the database accepts connections before
+      # the API container starts.
+      test: ["CMD-SHELL", "pg_isready -U root -d debter"]
+      interval: 3s
+      timeout: 15s
+      retries: 5
+
+  # API service — connects to the local PostgreSQL database
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.dev.pg
+    environment:
+      - IS_CHECK_DONE="true"
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["./start.sh"]
+    command: ["./main"]

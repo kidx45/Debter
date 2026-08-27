@@ -1,0 +1,26 @@
+# =============================================================================
+# Docker Compose — Production
+# =============================================================================
+# Production connects directly to Neon cloud (serverless PostgreSQL).
+# No local database service is defined here — the API talks to Neon's
+# connection pooler endpoint configured in the .env file.
+#
+# Usage: docker compose -f docker-compose.prod.yaml up --build
+# =============================================================================
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    # Environment variables are injected from .env at container start.
+    # The .env file contains the Neon cloud DB_URL and application config.
+    # It is NOT baked into the image (see Dockerfile for rationale).
+    env_file:
+      - .env
+    # No depends_on: production uses Neon cloud, no local DB needed.
+    # The app connects directly to Neon's pooler endpoint.
+    entrypoint: ["./start.sh"]
+    command: ["./main"]
