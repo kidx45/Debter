@@ -24,7 +24,7 @@ services:
       # the API container starts.
       test: ["CMD-SHELL", "pg_isready -U root -d debter"]
       interval: 3s
-      timeout: 15s
+      timeout: 10s
       retries: 5
 
   # API service — connects to the local PostgreSQL database
@@ -37,7 +37,7 @@ services:
     env_file:
       - .env.dev.pg
     environment:
-      - IS_CHECK_DONE="true"
+      IS_CHECK_DONE: "true"
     depends_on:
       db:
         condition: service_healthy
