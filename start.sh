@@ -20,11 +20,14 @@ set -e
 # Even though Docker Compose depends_on + healthcheck should ensure the DB
 # is ready, this is a safety net. pg_isready is a lightweight check that
 # returns 0 when the database accepts connections.
-echo "[entrypoint] Waiting for database ..."
-until pg_isready -d $DB_URL > /dev/null 2>&1; do
-    echo "[entrypoint] Database not ready, retrying in 1s..."
-    sleep 1
-done
+echo "[entrypoint] Checking if database health already tested ..."
+if [ "$IS_CHECK_DONE" != "true"]; then
+    echo "[entrypoint] Waiting for database ..."
+    until pg_isready -d $DB_URL > /dev/null 2>&1; do
+        echo "[entrypoint] Database not ready, retrying in 1s..."
+        sleep 1
+    done
+fi
 echo "[entrypoint] Database is ready."
 
 # ---------------------------------------------------------------------------
