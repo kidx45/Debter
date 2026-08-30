@@ -41,5 +41,5 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    entrypoint: ["./start.sh"]
+    entrypoint: ["./scripts/start.sh"]
     command: ["./main"]

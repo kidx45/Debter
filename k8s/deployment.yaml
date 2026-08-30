@@ -1,31 +1,47 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kubernetes-demo-api
+  name: debter-api
   labels:
-    app: kubernetes-demo-api
+    app: debter-api
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: kubernetes-demo-api
+      app: debter-api
   template:
     metadata:
       labels:
-        app: kubernetes-demo-api
+        app: debter-api
     spec:
       containers:
-        - name: kubernetes-demo-api
-          image: jsmasterypro/kubernetes-demo-api:latest
+        - name: debter-api
+          image: mrknixt/debter:1.1 # tags will cause issue so always place one even if it is :latest
           ports:
-            - containerPort: 3000
+            - containerPort: 8080
           env:
-            - name: NODE_ENV
-              value: "production"
-            - name: POD_NAME
+            - name: GIN_MODE
+              value: "release"
+            - name: DB_URL
               valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
+                secretKeyRef:
+                  name: debter-secrets
+                  key: DB_URL
+            - name: DB_DRIVER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: debter-secrets
+                  key: DB_DRIVER_NAME
+            - name: PORT
+              valueFrom:
+                secretKeyRef:
+                  name: debter-secrets
+                  key: PORT
+            - name: TOKEN_SYMMETRIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: debter-secrets
+                  key: TOKEN_SYMMETRIC_KEY
           resources:
             requests:
               cpu: "100m"
@@ -36,12 +52,12 @@ spec:
           readinessProbe:
             httpGet:
               path: /readyz
-              port: 3000
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /healthz
-              port: 3000
+              path: /healthz 
+              port: 8080
             initialDelaySeconds: 10
             periodSeconds: 20

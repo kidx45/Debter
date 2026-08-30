@@ -37,7 +37,9 @@ func NewServer(config domain.Config) (*Server, error) {
 
 	tokenMaker, err := token.NewPasetoMaker(config.TOKEN_SYMMETRIC_KEY)
 	if err != nil {
-		conn.Close()
+		if pqErr := conn.Close(); pqErr != nil {
+			return nil, fmt.Errorf("error setting up token maker: %w, error closing the db :%w", err, pqErr)
+		}
 		return nil, fmt.Errorf("error setting up token maker: %w", err)
 	}
 
@@ -55,8 +57,9 @@ func NewServer(config domain.Config) (*Server, error) {
 	accountAdapter := httpAdapter.NewAccountAdapter(*accountService)
 	entryAdapter := httpAdapter.NewEntryAdapter(*entryService)
 	authAdapter := httpAdapter.NewAuthAdapter(*authService)
+	healthAdapter := httpAdapter.NewHealthAdapter(conn.PingContext)
 
-	router := httpAdapter.NewRouter(tokenMaker, userAdapter, accountAdapter, entryAdapter, authAdapter)
+	router := httpAdapter.NewRouter(tokenMaker, userAdapter, accountAdapter, entryAdapter, authAdapter, healthAdapter)
 
 	httpSrv := &http.Server{
 		Addr:    ":" + config.PORT,

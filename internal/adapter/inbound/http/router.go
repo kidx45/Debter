@@ -6,8 +6,11 @@ import (
 	"github.com/kidx45/Debter/internal/util/token"
 )
 
-func NewRouter(tokenMaker token.TokenMaker, userAdapter *UserAdapter, accountAdapter *AccountAdapter, entryAdapter *EntryAdapter, authAdapter *AuthAdapter) *gin.Engine {
+func NewRouter(tokenMaker token.TokenMaker, userAdapter *UserAdapter, accountAdapter *AccountAdapter, entryAdapter *EntryAdapter, authAdapter *AuthAdapter, healthAdapter *HealthAdapter) *gin.Engine {
 	router := gin.Default()
+
+	router.GET("/healthz", healthAdapter.Healthz)
+	router.GET("/readyz", healthAdapter.Readyz)
 
 	v1 := router.Group("/api/v1")
 	{

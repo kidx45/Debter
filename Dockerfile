@@ -42,16 +42,16 @@ WORKDIR /debter
 # This keeps the image small (~15MB vs ~400MB with full Go toolchain).
 COPY --from=builder /debter/main .
 COPY --from=builder /debter/internal/migration ./migration
-COPY --from=builder /debter/start.sh .
+COPY --from=builder /debter/scripts/start.sh ./scripts/start.sh
 COPY --from=builder /go/bin/migrate .
-RUN chmod +x start.sh
+RUN chmod +x scripts/start.sh
 
 # Application will listen on this port
 EXPOSE 8080
 
-# start.sh runs migrations, then su-exec drops privileges to appuser
+# scripts/start.sh runs migrations, then su-exec drops privileges to appuser
 # and runs the main binary. This ensures:
 #   1. Migrations run with sufficient privileges (if needed)
 #   2. The application itself runs as a non-root user
-ENTRYPOINT ["./start.sh"]
+ENTRYPOINT ["./scripts/start.sh"]
 CMD ["./main"]
