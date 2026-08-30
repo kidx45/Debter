@@ -9,14 +9,14 @@
 
 services:
   # Standard PostgreSQL database
-  db:
+  postgres18:
     image: postgres:18-alpine
     # Postgres config is set via environment variables (not env_file)
     # because these are Postgres-specific, not app-specific.
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: secret
-      POSTGRES_DB: debter
+      POSTGRES_USER: 
+      POSTGRES_PASSWORD: 
+      POSTGRES_DB: 
     ports:
       - "5432:5432"
     healthcheck:
@@ -39,7 +39,7 @@ services:
     environment:
       IS_CHECK_DONE: "true"
     depends_on:
-      db:
+      postgres18:
         condition: service_healthy
-    entrypoint: ["./start.sh"]
+    entrypoint: ["./scripts/start.sh"]
     command: ["./main"]

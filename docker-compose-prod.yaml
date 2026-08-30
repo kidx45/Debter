@@ -22,5 +22,5 @@ services:
       - .env
     # No depends_on: production uses Neon cloud, no local DB needed.
     # The app connects directly to Neon's pooler endpoint.
-    entrypoint: ["./start.sh"]
+    entrypoint: ["./scripts/start.sh"]
     command: ["./main"]
