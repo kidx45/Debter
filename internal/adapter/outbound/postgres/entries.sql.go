@@ -10,6 +10,38 @@ import (
 	"time"
 )
 
+const createEntry = `-- name: CreateEntry :one
+INSERT INTO entries (account_id, amount, type, category)
+VALUES ($1, $2, $3, $4)
+RETURNING id, account_id, amount, type, category, created_at
+`
+
+type CreateEntryParams struct {
+	AccountID int64  `json:"accountId"`
+	Amount    int64  `json:"amount"`
+	Type      string `json:"type"`
+	Category  string `json:"category"`
+}
+
+func (q *Queries) CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error) {
+	row := q.queryRow(ctx, q.createEntryStmt, createEntry,
+		arg.AccountID,
+		arg.Amount,
+		arg.Type,
+		arg.Category,
+	)
+	var i Entry
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.Amount,
+		&i.Type,
+		&i.Category,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const filterEntriesByDate = `-- name: FilterEntriesByDate :many
 SELECT e.id, e.account_id, e.amount, e.type, e.category, e.created_at FROM entries e
 JOIN accounts a ON a.id = e.account_id

@@ -42,6 +42,21 @@ func (m *MockEntryRepository) EXPECT() *MockEntryRepositoryMockRecorder {
 	return m.recorder
 }
 
+// CreateEntry mocks base method.
+func (m *MockEntryRepository) CreateEntry(ctx context.Context, accountID, userID, amount int64, entryType, category string) (domain.Entry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateEntry", ctx, accountID, userID, amount, entryType, category)
+	ret0, _ := ret[0].(domain.Entry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateEntry indicates an expected call of CreateEntry.
+func (mr *MockEntryRepositoryMockRecorder) CreateEntry(ctx, accountID, userID, amount, entryType, category any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateEntry", reflect.TypeOf((*MockEntryRepository)(nil).CreateEntry), ctx, accountID, userID, amount, entryType, category)
+}
+
 // FilterEntriesByDate mocks base method.
 func (m *MockEntryRepository) FilterEntriesByDate(ctx context.Context, accountID, userID int64, from, to time.Time) ([]domain.Entry, error) {
 	m.ctrl.T.Helper()
@@ -85,4 +100,20 @@ func (m *MockEntryRepository) GetEntriesByCategoryAndType(ctx context.Context, a
 func (mr *MockEntryRepositoryMockRecorder) GetEntriesByCategoryAndType(ctx, accountID, userID, entryType any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEntriesByCategoryAndType", reflect.TypeOf((*MockEntryRepository)(nil).GetEntriesByCategoryAndType), ctx, accountID, userID, entryType)
+}
+
+// Transfer mocks base method.
+func (m *MockEntryRepository) Transfer(ctx context.Context, fromAccountID, toAccountID, userID, amount int64, entryType, category string) (domain.Entry, domain.Entry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Transfer", ctx, fromAccountID, toAccountID, userID, amount, entryType, category)
+	ret0, _ := ret[0].(domain.Entry)
+	ret1, _ := ret[1].(domain.Entry)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// Transfer indicates an expected call of Transfer.
+func (mr *MockEntryRepositoryMockRecorder) Transfer(ctx, fromAccountID, toAccountID, userID, amount, entryType, category any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Transfer", reflect.TypeOf((*MockEntryRepository)(nil).Transfer), ctx, fromAccountID, toAccountID, userID, amount, entryType, category)
 }

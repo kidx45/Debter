@@ -24,17 +24,32 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.createAccountStmt, err = db.PrepareContext(ctx, createAccount); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateAccount: %w", err)
+	}
+	if q.createEntryStmt, err = db.PrepareContext(ctx, createEntry); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateEntry: %w", err)
+	}
 	if q.createSessionStmt, err = db.PrepareContext(ctx, createSession); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateSession: %w", err)
 	}
 	if q.createUserStmt, err = db.PrepareContext(ctx, createUser); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateUser: %w", err)
 	}
+	if q.creditAccountStmt, err = db.PrepareContext(ctx, creditAccount); err != nil {
+		return nil, fmt.Errorf("error preparing query CreditAccount: %w", err)
+	}
+	if q.debitAccountStmt, err = db.PrepareContext(ctx, debitAccount); err != nil {
+		return nil, fmt.Errorf("error preparing query DebitAccount: %w", err)
+	}
 	if q.deleteUserByUsernameStmt, err = db.PrepareContext(ctx, deleteUserByUsername); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteUserByUsername: %w", err)
 	}
 	if q.filterEntriesByDateStmt, err = db.PrepareContext(ctx, filterEntriesByDate); err != nil {
 		return nil, fmt.Errorf("error preparing query FilterEntriesByDate: %w", err)
+	}
+	if q.getAccountByIDStmt, err = db.PrepareContext(ctx, getAccountByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetAccountByID: %w", err)
 	}
 	if q.getAccountsByUserIdStmt, err = db.PrepareContext(ctx, getAccountsByUserId); err != nil {
 		return nil, fmt.Errorf("error preparing query GetAccountsByUserId: %w", err)
@@ -68,6 +83,16 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
+	if q.createAccountStmt != nil {
+		if cerr := q.createAccountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createAccountStmt: %w", cerr)
+		}
+	}
+	if q.createEntryStmt != nil {
+		if cerr := q.createEntryStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createEntryStmt: %w", cerr)
+		}
+	}
 	if q.createSessionStmt != nil {
 		if cerr := q.createSessionStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createSessionStmt: %w", cerr)
@@ -78,6 +103,16 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing createUserStmt: %w", cerr)
 		}
 	}
+	if q.creditAccountStmt != nil {
+		if cerr := q.creditAccountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing creditAccountStmt: %w", cerr)
+		}
+	}
+	if q.debitAccountStmt != nil {
+		if cerr := q.debitAccountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing debitAccountStmt: %w", cerr)
+		}
+	}
 	if q.deleteUserByUsernameStmt != nil {
 		if cerr := q.deleteUserByUsernameStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteUserByUsernameStmt: %w", cerr)
@@ -86,6 +121,11 @@ func (q *Queries) Close() error {
 	if q.filterEntriesByDateStmt != nil {
 		if cerr := q.filterEntriesByDateStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing filterEntriesByDateStmt: %w", cerr)
+		}
+	}
+	if q.getAccountByIDStmt != nil {
+		if cerr := q.getAccountByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getAccountByIDStmt: %w", cerr)
 		}
 	}
 	if q.getAccountsByUserIdStmt != nil {
@@ -172,10 +212,15 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 type Queries struct {
 	db                              DBTX
 	tx                              *sql.Tx
+	createAccountStmt               *sql.Stmt
+	createEntryStmt                 *sql.Stmt
 	createSessionStmt               *sql.Stmt
 	createUserStmt                  *sql.Stmt
+	creditAccountStmt               *sql.Stmt
+	debitAccountStmt                *sql.Stmt
 	deleteUserByUsernameStmt        *sql.Stmt
 	filterEntriesByDateStmt         *sql.Stmt
+	getAccountByIDStmt              *sql.Stmt
 	getAccountsByUserIdStmt         *sql.Stmt
 	getEntriesByAccountIdStmt       *sql.Stmt
 	getEntriesByCategoryAndTypeStmt *sql.Stmt
@@ -191,10 +236,15 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
 		db:                              tx,
 		tx:                              tx,
+		createAccountStmt:               q.createAccountStmt,
+		createEntryStmt:                 q.createEntryStmt,
 		createSessionStmt:               q.createSessionStmt,
 		createUserStmt:                  q.createUserStmt,
+		creditAccountStmt:               q.creditAccountStmt,
+		debitAccountStmt:                q.debitAccountStmt,
 		deleteUserByUsernameStmt:        q.deleteUserByUsernameStmt,
 		filterEntriesByDateStmt:         q.filterEntriesByDateStmt,
+		getAccountByIDStmt:              q.getAccountByIDStmt,
 		getAccountsByUserIdStmt:         q.getAccountsByUserIdStmt,
 		getEntriesByAccountIdStmt:       q.getEntriesByAccountIdStmt,
 		getEntriesByCategoryAndTypeStmt: q.getEntriesByCategoryAndTypeStmt,

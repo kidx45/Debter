@@ -2,19 +2,91 @@ package outbound
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
 	"github.com/kidx45/Debter/internal/domain"
 	"github.com/kidx45/Debter/internal/port/outbound"
+	"github.com/kidx45/Debter/internal/util"
 )
 
 type postgresEntryRepo struct {
 	queries *db.Queries
+	conn    *sql.DB
 }
 
-func NewPostgresEntryRepository(queries *db.Queries) outbound.EntryRepository {
-	return &postgresEntryRepo{queries: queries}
+func NewPostgresEntryRepository(queries *db.Queries, conn *sql.DB) outbound.EntryRepository {
+	return &postgresEntryRepo{queries: queries, conn: conn}
+}
+
+func (r *postgresEntryRepo) CreateEntry(ctx context.Context, accountID, userID int64, amount int64, entryType, category string) (domain.Entry, error) {
+	result, err := r.queries.CreateEntry(ctx, db.CreateEntryParams{
+		AccountID: accountID,
+		Amount:    amount,
+		Type:      entryType,
+		Category:  category,
+	})
+	if err != nil {
+		return domain.Entry{}, err
+	}
+	return dbEntryToDomain(result), nil
+}
+
+func (r *postgresEntryRepo) Transfer(ctx context.Context, fromAccountID, toAccountID, userID int64, amount int64, entryType, category string) (domain.Entry, domain.Entry, error) {
+	var fromEntry, toEntry db.Entry
+
+	err := util.ExecTx(ctx, r.conn, func(q *db.Queries) error {
+		var txErr error
+
+		fromEntry, txErr = q.CreateEntry(ctx, db.CreateEntryParams{
+			AccountID: fromAccountID,
+			Amount:    -amount,
+			Type:      entryType,
+			Category:  category,
+		})
+		if txErr != nil {
+			return txErr
+		}
+
+		toEntry, txErr = q.CreateEntry(ctx, db.CreateEntryParams{
+			AccountID: toAccountID,
+			Amount:    amount,
+			Type:      entryType,
+			Category:  category,
+		})
+		if txErr != nil {
+			return txErr
+		}
+
+		rows, txErr := q.DebitAccount(ctx, db.DebitAccountParams{
+			Balance: -amount,
+			ID:      fromAccountID,
+			UserID:  userID,
+		})
+		if txErr != nil {
+			return txErr
+		}
+		if rows == 0 {
+			return sql.ErrNoRows
+		}
+
+		txErr = q.CreditAccount(ctx, db.CreditAccountParams{
+			Balance: amount,
+			ID:      toAccountID,
+			UserID:  userID,
+		})
+		if txErr != nil {
+			return txErr
+		}
+
+		return nil
+	})
+	if err != nil {
+		return domain.Entry{}, domain.Entry{}, err
+	}
+
+	return dbEntryToDomain(fromEntry), dbEntryToDomain(toEntry), nil
 }
 
 func (r *postgresEntryRepo) GetEntriesByAccountId(ctx context.Context, accountID, userID int64) ([]domain.Entry, error) {

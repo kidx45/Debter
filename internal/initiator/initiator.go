@@ -45,7 +45,7 @@ func NewServer(config domain.Config) (*Server, error) {
 
 	userRepo := outboundAdapter.NewPostgresUserRepository(queries)
 	accountRepo := outboundAdapter.NewPostgresAccountRepository(queries)
-	entryRepo := outboundAdapter.NewPostgresEntryRepository(queries)
+	entryRepo := outboundAdapter.NewPostgresEntryRepository(queries, conn)
 	sessionRepo := outboundAdapter.NewPostgresSessionRepository(queries)
 
 	userService := service.NewUserService(userRepo)

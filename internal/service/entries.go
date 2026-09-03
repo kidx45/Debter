@@ -19,6 +19,13 @@ func NewEntryService(entryRepo outbound.EntryRepository) *EntryService {
 	}
 }
 
+func (s *EntryService) Transfer(ctx context.Context, fromAccountID, toAccountID, userID int64, amount int64, entryType, category string) (domain.Entry, domain.Entry, error) {
+	if amount <= 0 {
+		return domain.Entry{}, domain.Entry{}, fmt.Errorf("transfer amount must be positive")
+	}
+	return s.EntryRepo.Transfer(ctx, fromAccountID, toAccountID, userID, amount, entryType, category)
+}
+
 func (s *EntryService) GetEntriesByAccountId(ctx context.Context, accountID, userID int64) ([]domain.Entry, error) {
 	res, err := s.EntryRepo.GetEntriesByAccountId(ctx, accountID, userID)
 	if err != nil {

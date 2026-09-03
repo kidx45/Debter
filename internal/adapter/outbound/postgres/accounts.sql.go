@@ -9,8 +9,95 @@ import (
 	"context"
 )
 
+const createAccount = `-- name: CreateAccount :one
+INSERT INTO accounts (user_id, account_type, account_number, balance)
+VALUES ($1, $2, $3, $4)
+RETURNING id, user_id, account_type, account_number, created_at, balance
+`
+
+type CreateAccountParams struct {
+	UserID        int64  `json:"userId"`
+	AccountType   string `json:"accountType"`
+	AccountNumber int64  `json:"accountNumber"`
+	Balance       int64  `json:"balance"`
+}
+
+func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
+	row := q.queryRow(ctx, q.createAccountStmt, createAccount,
+		arg.UserID,
+		arg.AccountType,
+		arg.AccountNumber,
+		arg.Balance,
+	)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AccountType,
+		&i.AccountNumber,
+		&i.CreatedAt,
+		&i.Balance,
+	)
+	return i, err
+}
+
+const creditAccount = `-- name: CreditAccount :exec
+UPDATE accounts
+SET balance = balance + $1
+WHERE id = $2 AND user_id = $3
+`
+
+type CreditAccountParams struct {
+	Balance int64 `json:"balance"`
+	ID      int64 `json:"id"`
+	UserID  int64 `json:"userId"`
+}
+
+func (q *Queries) CreditAccount(ctx context.Context, arg CreditAccountParams) error {
+	_, err := q.exec(ctx, q.creditAccountStmt, creditAccount, arg.Balance, arg.ID, arg.UserID)
+	return err
+}
+
+const debitAccount = `-- name: DebitAccount :execrows
+UPDATE accounts
+SET balance = balance + $1
+WHERE id = $2 AND user_id = $3 AND balance + $1 >= 0
+`
+
+type DebitAccountParams struct {
+	Balance int64 `json:"balance"`
+	ID      int64 `json:"id"`
+	UserID  int64 `json:"userId"`
+}
+
+func (q *Queries) DebitAccount(ctx context.Context, arg DebitAccountParams) (int64, error) {
+	result, err := q.exec(ctx, q.debitAccountStmt, debitAccount, arg.Balance, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const getAccountByID = `-- name: GetAccountByID :one
+SELECT id, user_id, account_type, account_number, created_at, balance FROM accounts WHERE id = $1
+`
+
+func (q *Queries) GetAccountByID(ctx context.Context, id int64) (Account, error) {
+	row := q.queryRow(ctx, q.getAccountByIDStmt, getAccountByID, id)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AccountType,
+		&i.AccountNumber,
+		&i.CreatedAt,
+		&i.Balance,
+	)
+	return i, err
+}
+
 const getAccountsByUserId = `-- name: GetAccountsByUserId :many
-SELECT id, user_id, account_type, account_number, created_at FROM accounts
+SELECT id, user_id, account_type, account_number, created_at, balance FROM accounts
 WHERE user_id = $1 ORDER BY account_type ASC
 `
 
@@ -29,6 +116,7 @@ func (q *Queries) GetAccountsByUserId(ctx context.Context, userID int64) ([]Acco
 			&i.AccountType,
 			&i.AccountNumber,
 			&i.CreatedAt,
+			&i.Balance,
 		); err != nil {
 			return nil, err
 		}
