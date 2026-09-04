@@ -14,6 +14,7 @@ type Account struct {
 	AccountType   string    `json:"accountType"`
 	AccountNumber int64     `json:"accountNumber"`
 	CreatedAt     time.Time `json:"createdAt"`
+	Balance       int64     `json:"balance"`
 }
 
 type Entry struct {

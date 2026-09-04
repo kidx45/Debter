@@ -16,6 +16,7 @@ type Account struct {
 	UserID        int64     `json:"userId"`
 	AccountType   string    `json:"accountType"`
 	AccountNumber int64     `json:"accountNumber"`
+	Balance       int64     `json:"balance"`
 	CreatedAt     time.Time `json:"createdAt"`
 }
 

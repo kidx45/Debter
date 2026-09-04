@@ -9,10 +9,15 @@ import (
 )
 
 type Querier interface {
+	CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error)
+	CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	CreditAccount(ctx context.Context, arg CreditAccountParams) error
+	DebitAccount(ctx context.Context, arg DebitAccountParams) (int64, error)
 	DeleteUserByUsername(ctx context.Context, username string) error
 	FilterEntriesByDate(ctx context.Context, arg FilterEntriesByDateParams) ([]Entry, error)
+	GetAccountByID(ctx context.Context, id int64) (Account, error)
 	GetAccountsByUserId(ctx context.Context, userID int64) ([]Account, error)
 	GetEntriesByAccountId(ctx context.Context, arg GetEntriesByAccountIdParams) ([]Entry, error)
 	GetEntriesByCategoryAndType(ctx context.Context, arg GetEntriesByCategoryAndTypeParams) ([]GetEntriesByCategoryAndTypeRow, error)

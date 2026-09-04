@@ -2,6 +2,9 @@ package unit
 
 import (
 	"context"
+	"database/sql"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -199,4 +202,251 @@ func TestGetEntriesByCategoryAndType(t *testing.T) {
 			testCases[i].checkResponse(t, res, err)
 		})
 	}
+}
+
+func TestTransfer(t *testing.T) {
+	userID := util.RandomNumber(1, 100)
+	fromAccountID := util.RandomNumber(1, 100)
+	toAccountID := util.RandomNumber(1, 100)
+	amount := int64(5000)
+
+	fromEntry := domain.Entry{
+		ID:        util.RandomNumber(1, 1000),
+		AccountID: fromAccountID,
+		Amount:    -amount,
+		Type:      "transfer",
+		Category:  "rent",
+		CreatedAt: time.Now(),
+	}
+	toEntry := domain.Entry{
+		ID:        util.RandomNumber(1, 1000),
+		AccountID: toAccountID,
+		Amount:    amount,
+		Type:      "transfer",
+		Category:  "rent",
+		CreatedAt: time.Now(),
+	}
+
+	testCases := []struct {
+		name            string
+		fromAccountID   int64
+		toAccountID     int64
+		userID          int64
+		amount          int64
+		entryType       string
+		category        string
+		buildRepository func(repository *mockrepository.MockEntryRepository)
+		checkResponse   func(t *testing.T, fromEntry, toEntry domain.Entry, err error)
+	}{
+		{
+			name:          "OK",
+			fromAccountID: fromAccountID,
+			toAccountID:   toAccountID,
+			userID:        userID,
+			amount:        amount,
+			entryType:     "transfer",
+			category:      "rent",
+			buildRepository: func(repository *mockrepository.MockEntryRepository) {
+				repository.EXPECT().Transfer(
+					gomock.Any(),
+					gomock.Eq(fromAccountID),
+					gomock.Eq(toAccountID),
+					gomock.Eq(userID),
+					gomock.Eq(amount),
+					gomock.Eq("transfer"),
+					gomock.Eq("rent"),
+				).Return(fromEntry, toEntry, nil)
+			},
+			checkResponse: func(t *testing.T, fe, te domain.Entry, err error) {
+				require.NoError(t, err)
+				require.Equal(t, fromEntry, fe)
+				require.Equal(t, toEntry, te)
+			},
+		},
+		{
+			name:          "NegativeAmount",
+			fromAccountID: fromAccountID,
+			toAccountID:   toAccountID,
+			userID:        userID,
+			amount:        -100,
+			entryType:     "transfer",
+			category:      "rent",
+			buildRepository: func(repository *mockrepository.MockEntryRepository) {
+			},
+			checkResponse: func(t *testing.T, fe, te domain.Entry, err error) {
+				require.Error(t, err)
+				require.Equal(t, "transfer amount must be positive", err.Error())
+			},
+		},
+		{
+			name:          "ZeroAmount",
+			fromAccountID: fromAccountID,
+			toAccountID:   toAccountID,
+			userID:        userID,
+			amount:        0,
+			entryType:     "transfer",
+			category:      "rent",
+			buildRepository: func(repository *mockrepository.MockEntryRepository) {
+			},
+			checkResponse: func(t *testing.T, fe, te domain.Entry, err error) {
+				require.Error(t, err)
+				require.Equal(t, "transfer amount must be positive", err.Error())
+			},
+		},
+		{
+			name:          "InsufficientBalance",
+			fromAccountID: fromAccountID,
+			toAccountID:   toAccountID,
+			userID:        userID,
+			amount:        amount,
+			entryType:     "transfer",
+			category:      "rent",
+			buildRepository: func(repository *mockrepository.MockEntryRepository) {
+				repository.EXPECT().Transfer(
+					gomock.Any(),
+					gomock.Eq(fromAccountID),
+					gomock.Eq(toAccountID),
+					gomock.Eq(userID),
+					gomock.Eq(amount),
+					gomock.Eq("transfer"),
+					gomock.Eq("rent"),
+				).Return(domain.Entry{}, domain.Entry{}, sql.ErrNoRows)
+			},
+			checkResponse: func(t *testing.T, fe, te domain.Entry, err error) {
+				require.Error(t, err)
+				require.ErrorIs(t, err, sql.ErrNoRows)
+			},
+		},
+	}
+
+	for i := range testCases {
+		t.Run(testCases[i].name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			repository := mockrepository.NewMockEntryRepository(ctrl)
+			testCases[i].buildRepository(repository)
+			entryService := NewTestEntryService(t, repository)
+			fe, te, err := entryService.Transfer(
+				context.Background(),
+				testCases[i].fromAccountID,
+				testCases[i].toAccountID,
+				testCases[i].userID,
+				testCases[i].amount,
+				testCases[i].entryType,
+				testCases[i].category,
+			)
+			testCases[i].checkResponse(t, fe, te, err)
+		})
+	}
+}
+
+func TestTransferConcurrent(t *testing.T) {
+	userID := util.RandomNumber(1, 100)
+	fromAccountID := util.RandomNumber(1, 100)
+	toAccountID := util.RandomNumber(1, 100)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repository := mockrepository.NewMockEntryRepository(ctrl)
+
+	const numGoroutines = 10
+	const transferAmount int64 = 100
+
+	repository.EXPECT().Transfer(
+		gomock.Any(),
+		gomock.Eq(fromAccountID),
+		gomock.Eq(toAccountID),
+		gomock.Eq(userID),
+		gomock.Eq(transferAmount),
+		gomock.Any(),
+		gomock.Any(),
+	).Times(numGoroutines).Return(
+		domain.Entry{AccountID: fromAccountID, Amount: -transferAmount, Type: "transfer"},
+		domain.Entry{AccountID: toAccountID, Amount: transferAmount, Type: "transfer"},
+		nil,
+	)
+
+	entryService := NewTestEntryService(t, repository)
+
+	var wg sync.WaitGroup
+	var errCount int64
+
+	wg.Add(numGoroutines)
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			_, _, err := entryService.Transfer(
+				context.Background(),
+				fromAccountID,
+				toAccountID,
+				userID,
+				transferAmount,
+				"transfer",
+				"concurrent-test",
+			)
+			if err != nil {
+				atomic.AddInt64(&errCount, 1)
+			}
+		}()
+	}
+
+	wg.Wait()
+	require.Zero(t, errCount, "concurrent transfers produced errors")
+}
+
+func TestTransferMultipleEntriesConcurrent(t *testing.T) {
+	userID := util.RandomNumber(1, 100)
+	accountA := util.RandomNumber(1, 100)
+	accountB := util.RandomNumber(1, 100)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repository := mockrepository.NewMockEntryRepository(ctrl)
+
+	const numTransfers = 20
+	const transferAmount int64 = 100
+
+	repository.EXPECT().Transfer(
+		gomock.Any(),
+		gomock.Any(),
+		gomock.Any(),
+		gomock.Eq(userID),
+		gomock.Eq(transferAmount),
+		gomock.Any(),
+		gomock.Any(),
+	).Times(numTransfers).Return(
+		domain.Entry{Amount: -transferAmount, Type: "transfer"},
+		domain.Entry{Amount: transferAmount, Type: "transfer"},
+		nil,
+	)
+
+	entryService := NewTestEntryService(t, repository)
+
+	var wg sync.WaitGroup
+	var errCount int64
+
+	wg.Add(numTransfers)
+	for i := 0; i < numTransfers; i++ {
+		go func() {
+			defer wg.Done()
+			_, _, err := entryService.Transfer(
+				context.Background(),
+				accountA,
+				accountB,
+				userID,
+				transferAmount,
+				"transfer",
+				"multi-entry-test",
+			)
+			if err != nil {
+				atomic.AddInt64(&errCount, 1)
+			}
+		}()
+	}
+
+	wg.Wait()
+	require.Zero(t, errCount, "concurrent multi-entry transfers produced errors")
 }

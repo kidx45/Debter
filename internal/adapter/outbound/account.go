@@ -34,6 +34,7 @@ func dbAccountToDomain(a db.Account) domain.Account {
 		UserID:        a.UserID,
 		AccountType:   a.AccountType,
 		AccountNumber: a.AccountNumber,
+		Balance:       a.Balance,
 		CreatedAt:     a.CreatedAt,
 	}
 }

@@ -19,6 +19,7 @@ func RandomAccount(t *testing.T) domain.Account {
 		UserID:        util.RandomNumber(1, 100),
 		AccountType:   "savings",
 		AccountNumber: util.RandomNumber(100000, 999999),
+		Balance:       util.RandomNumber(0, 100000),
 		CreatedAt:     time.Now(),
 	}
 }

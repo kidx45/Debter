@@ -1,3 +1,8 @@
+-- name: CreateEntry :one
+INSERT INTO entries (account_id, amount, type, category)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
+
 -- name: GetEntriesByAccountId :many
 SELECT e.* FROM entries e
 JOIN accounts a ON a.id = e.account_id
