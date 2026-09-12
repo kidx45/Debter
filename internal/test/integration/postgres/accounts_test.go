@@ -9,13 +9,12 @@ import (
 )
 
 func TestGetAccountsByUserId(t *testing.T) {
-	user := createTestUserDirect(t)
+	user, q := CreateRandomUser(t)
 
 	createTestAccountDirect(t, user.ID, "savings", 10000)
 	createTestAccountDirect(t, user.ID, "checking", 5000)
 	createTestAccountDirect(t, user.ID, "investment", 15000)
 
-	q := TxQueriesTest(t)
 	accounts, err := q.GetAccountsByUserId(context.Background(), user.ID)
 	require.NoError(t, err)
 	require.Len(t, accounts, 3)

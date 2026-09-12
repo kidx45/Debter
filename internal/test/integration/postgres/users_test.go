@@ -10,15 +10,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CreateRandomUser(t *testing.T) (db.User, *db.Queries) {
+func CreateRandomUser(t *testing.T, args ...db.CreateUserParams) (db.User, *db.Queries) {
 	query := TxQueriesTest(t)
-	arg := db.CreateUserParams{
-		Username:       util.RandomString(6),
-		FullName:       util.RandomString(6),
-		Email:          util.RandomString(6),
-		HashedPassword: util.RandomString(6),
-	}
 
+	var arg db.CreateUserParams
+	if len(args) > 0 {
+		arg = args[0]
+	} else {
+		arg = db.CreateUserParams{
+			Username:       util.RandomString(6),
+			FullName:       util.RandomString(6),
+			Email:          util.RandomString(6),
+			HashedPassword: util.RandomString(6),
+		}
+	}
 	res, err := query.CreateUser(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, res)
