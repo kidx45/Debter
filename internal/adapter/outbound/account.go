@@ -6,6 +6,7 @@ import (
 	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
 	"github.com/kidx45/Debter/internal/domain"
 	"github.com/kidx45/Debter/internal/port/outbound"
+	"github.com/kidx45/Debter/internal/util"
 )
 
 type postgresAccountRepo struct {
@@ -23,18 +24,7 @@ func (r *postgresAccountRepo) GetAccountsByUserId(ctx context.Context, userID in
 	}
 	accounts := make([]domain.Account, len(results))
 	for i, a := range results {
-		accounts[i] = dbAccountToDomain(a)
+		accounts[i] = util.DbAccountToDomain(a)
 	}
 	return accounts, nil
-}
-
-func dbAccountToDomain(a db.Account) domain.Account {
-	return domain.Account{
-		ID:            a.ID,
-		UserID:        a.UserID,
-		AccountType:   a.AccountType,
-		AccountNumber: a.AccountNumber,
-		Balance:       a.Balance,
-		CreatedAt:     a.CreatedAt,
-	}
 }

@@ -41,43 +41,6 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (A
 	return i, err
 }
 
-const creditAccount = `-- name: CreditAccount :exec
-UPDATE accounts
-SET balance = balance + $1
-WHERE id = $2 AND user_id = $3
-`
-
-type CreditAccountParams struct {
-	Balance int64 `json:"balance"`
-	ID      int64 `json:"id"`
-	UserID  int64 `json:"userId"`
-}
-
-func (q *Queries) CreditAccount(ctx context.Context, arg CreditAccountParams) error {
-	_, err := q.exec(ctx, q.creditAccountStmt, creditAccount, arg.Balance, arg.ID, arg.UserID)
-	return err
-}
-
-const debitAccount = `-- name: DebitAccount :execrows
-UPDATE accounts
-SET balance = balance + $1
-WHERE id = $2 AND user_id = $3 AND balance + $1 >= 0
-`
-
-type DebitAccountParams struct {
-	Balance int64 `json:"balance"`
-	ID      int64 `json:"id"`
-	UserID  int64 `json:"userId"`
-}
-
-func (q *Queries) DebitAccount(ctx context.Context, arg DebitAccountParams) (int64, error) {
-	result, err := q.exec(ctx, q.debitAccountStmt, debitAccount, arg.Balance, arg.ID, arg.UserID)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected()
-}
-
 const getAccountByID = `-- name: GetAccountByID :one
 SELECT id, user_id, account_type, account_number, created_at, balance FROM accounts WHERE id = $1
 `
@@ -129,4 +92,31 @@ func (q *Queries) GetAccountsByUserId(ctx context.Context, userID int64) ([]Acco
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateUserAccount = `-- name: UpdateUserAccount :one
+UPDATE accounts
+SET balance = balance + $1
+WHERE id = $2 AND user_id = $3 AND balance + $1 >= 0
+RETURNING id, user_id, account_type, account_number, created_at, balance
+`
+
+type UpdateUserAccountParams struct {
+	Balance int64 `json:"balance"`
+	ID      int64 `json:"id"`
+	UserID  int64 `json:"userId"`
+}
+
+func (q *Queries) UpdateUserAccount(ctx context.Context, arg UpdateUserAccountParams) (Account, error) {
+	row := q.queryRow(ctx, q.updateUserAccountStmt, updateUserAccount, arg.Balance, arg.ID, arg.UserID)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AccountType,
+		&i.AccountNumber,
+		&i.CreatedAt,
+		&i.Balance,
+	)
+	return i, err
 }

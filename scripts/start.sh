@@ -22,11 +22,11 @@ set -e
 # returns 0 when the database accepts connections.
 echo "[entrypoint] Checking if database health already tested ..."
 if [ "$IS_CHECK_DONE" != "true"]; then
-    echo "[entrypoint] Waiting for database ..."
-    until pg_isready -d $DB_URL > /dev/null 2>&1; do
-        echo "[entrypoint] Database not ready, retrying in 1s..."
-        sleep 1
-    done
+  echo "[entrypoint] Waiting for database ..."
+  until pg_isready -d $DB_URL >/dev/null 2>&1; do
+    echo "[entrypoint] Database not ready, retrying in 1s..."
+    sleep 1
+  done
 fi
 echo "[entrypoint] Database is ready."
 

@@ -5,8 +5,36 @@ import (
 	"testing"
 
 	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
+	"github.com/kidx45/Debter/internal/util"
 	"github.com/stretchr/testify/require"
 )
+
+func CreateRandomAccount(t *testing.T, query *db.Queries, args ...db.CreateAccountParams) (db.Account, *db.Queries) {
+	var arg db.CreateAccountParams
+
+	if len(args) == 0 && query == nil {
+		user, q := CreateRandomUser(t)
+		arg = db.CreateAccountParams{
+			UserID:        user.ID,
+			AccountType:   "savings",
+			AccountNumber: util.RandomNumber(100000, 999999),
+			Balance:       5000,
+		}
+		query = q
+	}
+
+	account, err := query.CreateAccount(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, account)
+	require.Equal(t, arg.UserID, account.UserID)
+	require.Equal(t, "savings", account.AccountType)
+	require.Equal(t, int64(5000), account.Balance)
+	return account, query
+}
+
+func TestCreateAccount(t *testing.T, arg ...db.CreateAccountParams) {
+	CreateRandomAccount(t, nil)
+}
 
 func TestGetAccountsByUserId(t *testing.T) {
 	user, q := CreateRandomUser(t)

@@ -13,8 +13,6 @@ type Querier interface {
 	CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	CreditAccount(ctx context.Context, arg CreditAccountParams) error
-	DebitAccount(ctx context.Context, arg DebitAccountParams) (int64, error)
 	DeleteUserByUsername(ctx context.Context, username string) error
 	FilterEntriesByDate(ctx context.Context, arg FilterEntriesByDateParams) ([]Entry, error)
 	GetAccountByID(ctx context.Context, id int64) (Account, error)
@@ -26,6 +24,7 @@ type Querier interface {
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 	UpdateFullNameByUsername(ctx context.Context, arg UpdateFullNameByUsernameParams) (User, error)
 	UpdateSessionRefreshToken(ctx context.Context, arg UpdateSessionRefreshTokenParams) (Session, error)
+	UpdateUserAccount(ctx context.Context, arg UpdateUserAccountParams) (Account, error)
 	UpdateUserNameByUsername(ctx context.Context, arg UpdateUserNameByUsernameParams) (User, error)
 }
 

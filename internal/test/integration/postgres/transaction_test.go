@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
-	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
 	adapter "github.com/kidx45/Debter/internal/adapter/outbound"
+	db "github.com/kidx45/Debter/internal/adapter/outbound/postgres"
 	port "github.com/kidx45/Debter/internal/port/outbound"
 	"github.com/kidx45/Debter/internal/util"
 	"github.com/stretchr/testify/require"
@@ -19,7 +19,13 @@ func newTransactionRepo() port.UpdateContents {
 }
 
 func TestUpdateBalanceTxExpense(t *testing.T) {
-	user := createTestUserDirect(t)
+	query := db.New(testDB)
+	user, _ := query.CreateUser(context.Background(), db.CreateUserParams{
+		Username:       util.RandomUserName(4, 6),
+		HashedPassword: util.RandomPassword(5, 10),
+		FullName:       util.RandomFullName(5, 10),
+		Email:          util.RandomEmail(5, 10),
+	})
 	account := createTestAccountDirect(t, user.ID, "checking", 10000)
 	repo := newTransactionRepo()
 

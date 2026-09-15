@@ -37,32 +37,15 @@ func createTestAccountDirect(t *testing.T, userID int64, accountType string, ini
 	return db.Account{ID: accountID, UserID: userID, AccountType: accountType, Balance: initialBalance}
 }
 
-func TestCreateAccount(t *testing.T) {
-	user, q := CreateRandomUser(t)
-
-	account, err := q.CreateAccount(context.Background(), db.CreateAccountParams{
-		UserID:        user.ID,
-		AccountType:   "savings",
-		AccountNumber: util.RandomNumber(100000, 999999),
-		Balance:       5000,
-	})
-	require.NoError(t, err)
-	require.NotEmpty(t, account)
-	require.Equal(t, user.ID, account.UserID)
-	require.Equal(t, "savings", account.AccountType)
-	require.Equal(t, int64(5000), account.Balance)
-}
-
 func TestCreateEntry(t *testing.T) {
 	user, q := CreateRandomUser(t)
 
-	account, err := q.CreateAccount(context.Background(), db.CreateAccountParams{
+	account, _ := CreateRandomAccount(t, q, db.CreateAccountParams{
 		UserID:        user.ID,
-		AccountType:   "checking",
-		AccountNumber: util.RandomNumber(100000, 999999),
-		Balance:       0,
+		AccountNumber: util.RandomNumber(9, 10),
+		AccountType:   "saving",
+		Balance:       util.RandomNumber(100, 500),
 	})
-	require.NoError(t, err)
 
 	entry, err := q.CreateEntry(context.Background(), db.CreateEntryParams{
 		AccountID: account.ID,

@@ -10,12 +10,9 @@ RETURNING *;
 -- name: GetAccountByID :one
 SELECT * FROM accounts WHERE id = $1;
 
--- name: DebitAccount :execrows
+-- name: UpdateUserAccount :one
 UPDATE accounts
 SET balance = balance + $1
-WHERE id = $2 AND user_id = $3 AND balance + $1 >= 0;
+WHERE id = $2 AND user_id = $3 AND balance + $1 >= 0
+RETURNING *;
 
--- name: CreditAccount :exec
-UPDATE accounts
-SET balance = balance + $1
-WHERE id = $2 AND user_id = $3;

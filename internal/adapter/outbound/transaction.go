@@ -19,14 +19,6 @@ func NewPostgresTransactionRepository(queries *db.Queries, conn *sql.DB) outboun
 	return &postgresTransactionRepo{queries: queries, conn: conn}
 }
 
-func (r *postgresTransactionRepo) UpdateAccount(ctx context.Context, accountID, userID, amount int64) error {
-	return r.updateAccount(ctx, r.queries, accountID, userID, amount)
-}
-
-func (r *postgresTransactionRepo) InsertEntry(ctx context.Context, accountID, userID, amount int64, entryType, category string) (domain.Entry, error) {
-	return r.insertEntry(ctx, r.queries, accountID, userID, amount, entryType, category)
-}
-
 func (r *postgresTransactionRepo) UpdateBalanceTx(ctx context.Context, accountID, userID, amount int64, entryType, category string) (domain.Entry, domain.Account, error) {
 	var entry domain.Entry
 	var account domain.Account
@@ -39,16 +31,10 @@ func (r *postgresTransactionRepo) UpdateBalanceTx(ctx context.Context, accountID
 			return txErr
 		}
 
-		txErr = r.updateAccount(ctx, q, accountID, userID, amount)
+		account, txErr = r.updateAccount(ctx, q, accountID, userID, amount)
 		if txErr != nil {
 			return txErr
 		}
-
-		row, txErr := q.GetAccountByID(ctx, accountID)
-		if txErr != nil {
-			return txErr
-		}
-		account = dbAccountToDomain(row)
 
 		return nil
 	})
@@ -59,27 +45,16 @@ func (r *postgresTransactionRepo) UpdateBalanceTx(ctx context.Context, accountID
 	return entry, account, nil
 }
 
-func (r *postgresTransactionRepo) updateAccount(ctx context.Context, q *db.Queries, accountID, userID, amount int64) error {
-	if amount >= 0 {
-		return q.CreditAccount(ctx, db.CreditAccountParams{
-			Balance: amount,
-			ID:      accountID,
-			UserID:  userID,
-		})
-	}
-
-	rows, err := q.DebitAccount(ctx, db.DebitAccountParams{
+func (r *postgresTransactionRepo) updateAccount(ctx context.Context, q *db.Queries, accountID, userID, amount int64) (domain.Account, error) {
+	account, err := q.UpdateUserAccount(ctx, db.UpdateUserAccountParams{
 		Balance: amount,
 		ID:      accountID,
 		UserID:  userID,
 	})
 	if err != nil {
-		return err
+		return domain.Account{}, err
 	}
-	if rows == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return util.DbAccountToDomain(account), nil
 }
 
 func (r *postgresTransactionRepo) insertEntry(ctx context.Context, q *db.Queries, accountID, userID, amount int64, entryType, category string) (domain.Entry, error) {
@@ -92,5 +67,5 @@ func (r *postgresTransactionRepo) insertEntry(ctx context.Context, q *db.Queries
 	if err != nil {
 		return domain.Entry{}, err
 	}
-	return dbEntryToDomain(result), nil
+	return util.DbEntryToDomain(result), nil
 }
